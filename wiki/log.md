@@ -74,7 +74,7 @@ status: active
 - Added separate guard/drone damage attribution to simulation terminal info and evaluation reports.
 - Retained the reused 2M teacher tuning audit at 100.0%, 100.0%, 98.2%, 96.8%, 98.0%, and 87.6% as provenance only; it did not serve as the final comparison. Each later 3M/4M/5M audit was retired immediately after inspection before the untouched 6M pass.
 - Iterated the 500-seed tier-5 curve from 92.0% through 92.6%, 93.4%, and 94.4% to 98.0%. The final run reduced mean damage to 0.402 (0.356 guard, 0.046 drone) and median maximum trace to 62.31.
-- Kept the learning pipeline framework-light: behavior cloning, DAgger, RND, recurrent PPO/GAE, selection, and resume state are pure in-project PyTorch. The neural champion and its acceptance evaluation remain pending.
+- Kept the learning pipeline framework-light: behavior cloning, DAgger, RND, recurrent PPO/GAE, selection, and resume state are pure in-project PyTorch. The selected 384-unit GRU BC+DAgger champion passed the one-time 3,000-episode final evaluation at `98.0/98.2/99.2/97.0/95.8/94.8%`; its matched-seed PPO pilot regressed and was rejected transparently.
 
 - Registered `GhostlineEnv-v2` with an explicit player-equivalent objective vector while retaining the v1 baseline.
 - Added seven training-only reverse-curriculum lessons and terminal telemetry for matched-seed evaluation.
