@@ -111,6 +111,41 @@ function showNotice(message, kind = "info") {
   showNotice.timeout = setTimeout(() => { notice.hidden = true; }, 4800);
 }
 
+function usesCompactLabLayout() {
+  return Boolean(
+    globalThis.matchMedia?.("(max-width: 980px), (pointer: coarse) and (max-height: 600px)").matches
+  );
+}
+
+function setIntelPanel(open, { focus = false, closeTarget = "trigger" } = {}) {
+  const active = Boolean(open);
+  const compact = usesCompactLabLayout();
+  const panel = $("agent-lab-panel");
+  document.body.classList.toggle("mobile-lab-open", compact && active);
+  document.body.classList.toggle("lab-panel-collapsed", !compact && !active);
+  for (const element of document.querySelectorAll(".site-header, .game-column, .site-legal")) {
+    element.inert = compact && active;
+  }
+  if (panel) {
+    if (compact && active) {
+      panel.setAttribute("role", "dialog");
+      panel.setAttribute("aria-modal", "true");
+    } else {
+      panel.removeAttribute("role");
+      panel.removeAttribute("aria-modal");
+    }
+  }
+  const trigger = $("intel-panel-control");
+  if (trigger) {
+    trigger.setAttribute("aria-expanded", String(active));
+    trigger.textContent = compact ? "RUN SETUP" : active ? "HIDE INTEL" : "SHOW INTEL";
+  }
+  if (active && focus) $("tier-select")?.focus();
+  else if (!active && focus) {
+    (closeTarget === "canvas" ? $("canvas") : trigger)?.focus();
+  }
+}
+
 function setPolicyState(state, message) {
   const chip = $("policy-chip");
   if (chip) {
@@ -220,6 +255,7 @@ async function replayPortfolioAgentRun() {
   if ($("tier-select")) $("tier-select").value = String(portfolioDemo.tier);
   if ($("seed-input")) $("seed-input").value = String(portfolioDemo.seed);
   showNotice("Loading the exact tier-six contract and checkpoint used by the portfolio recording.", "info");
+  setIntelPanel(false, { focus: true, closeTarget: "canvas" });
   await requestAgentControl({ fresh: true });
 }
 
@@ -267,22 +303,53 @@ globalThis.ghostlineShell = {
   updateMetrics,
 };
 
-$("play-selected")?.addEventListener("click", () => queue("launch-human"));
+$("play-selected")?.addEventListener("click", () => {
+  queue("launch-human");
+  setIntelPanel(false, { focus: true, closeTarget: "canvas" });
+});
 $("agent-control")?.addEventListener("click", () => { void requestAgentControl(); });
 $("portfolio-agent-control")?.addEventListener("click", () => { void replayPortfolioAgentRun(); });
 $("human-control")?.addEventListener("click", restoreHumanControl);
 $("fullscreen-control")?.addEventListener("click", toggleFullscreen);
 $("focus-control")?.addEventListener("click", () => $("canvas")?.focus());
+$("intel-panel-control")?.addEventListener("click", () => {
+  const trigger = $("intel-panel-control");
+  setIntelPanel(trigger?.getAttribute("aria-expanded") !== "true", { focus: true });
+});
+$("mobile-lab-close")?.addEventListener("click", () => setIntelPanel(false, { focus: true }));
 $("focus-game")?.addEventListener("click", () => {
   if (gameReady) setBootState("running");
   else setBootState("booting", "Loading the facility and browser runtime…");
   queue("focus");
+  if (
+    !document.fullscreenElement
+    && globalThis.matchMedia?.("(pointer: coarse) and (orientation: landscape)").matches
+  ) {
+    void toggleFullscreen();
+  }
 });
-$("game-frame")?.addEventListener("pointerdown", () => $("canvas")?.focus());
+$("game-frame")?.addEventListener("pointerdown", () => {
+  $("canvas")?.focus();
+  queue("focus");
+});
+globalThis.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && document.body.classList.contains("mobile-lab-open")) {
+    setIntelPanel(false, { focus: true });
+  }
+});
+let compactLabLayout = usesCompactLabLayout();
+globalThis.addEventListener("resize", () => {
+  const nextCompact = usesCompactLabLayout();
+  if (nextCompact !== compactLabLayout) {
+    compactLabLayout = nextCompact;
+    setIntelPanel(!nextCompact);
+  }
+});
 document.addEventListener("visibilitychange", () => {
   if (document.hidden) queue("pause-hidden");
 });
 globalThis.addEventListener("blur", () => queue("pause-focus"));
+globalThis.addEventListener("focus", () => queue("focus"));
 
 globalThis.addEventListener("ghostline:policy-manifest", (event) => {
   policyAvailability = Boolean(event.detail.available);
@@ -328,4 +395,5 @@ globalThis.addEventListener("ghostline:policy-inference", (event) => {
 renderComparison();
 setControlMode("human");
 setBootState("booting");
+setIntelPanel(!compactLabLayout);
 void ghostlinePolicy.probe();

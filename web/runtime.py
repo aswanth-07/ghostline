@@ -27,16 +27,28 @@ PROGRESSION_STORAGE_KEY = "ghostline.progression-v1"
 def browser_prefers_touch(host: Any) -> bool:
     """Detect a touch-first browser without making touch a web dependency."""
 
+    touch_points = 0
     try:
         navigator = host.navigator
-        if int(getattr(navigator, "maxTouchPoints", 0) or 0) > 0:
-            return True
+        touch_points = int(getattr(navigator, "maxTouchPoints", 0) or 0)
     except Exception:
         pass
     try:
-        return bool(host.matchMedia("(pointer: coarse)").matches)
+        coarse = bool(host.matchMedia("(pointer: coarse)").matches)
+        fine = bool(host.matchMedia("(pointer: fine)").matches)
+        constrained = bool(
+            host.matchMedia("(max-width: 980px), (max-height: 600px)").matches
+        )
+        # A hybrid Windows laptop commonly reports touch points while retaining
+        # a fine primary pointer. Do not permanently cover its desktop canvas
+        # with phone controls; real finger events can still opt in later.
+        return coarse or (touch_points > 0 and constrained and not fine)
     except Exception:
-        return False
+        try:
+            constrained = int(host.innerWidth) <= 980 or int(host.innerHeight) <= 600
+        except Exception:
+            constrained = False
+        return touch_points > 0 and constrained
 
 
 def _browser_gymnasium_shim() -> ModuleType:
@@ -278,6 +290,7 @@ class GhostlineWebRuntime:
         elif kind == "policy-failed":
             self._restore_human_after_policy_failure()
         elif kind in {"pause-hidden", "pause-focus"}:
+            self.app.audio.set_focus_active(False)
             # Agent showcase runs do not depend on keyboard focus. Human play
             # must never spend mission time while its iframe/tab has no input.
             if self.app.state == "play" and not self.app.sim.terminated and not self.app.sim.truncated:
@@ -287,6 +300,7 @@ class GhostlineWebRuntime:
         elif kind == "reset-policy":
             self.host.ghostlinePolicy.reset()
         elif kind == "focus":
+            self.app.audio.set_focus_active(True)
             self.host.document.getElementById("canvas").focus()
 
     async def _enable_agent(self, *, tier: int, seed: int | None, fresh: bool = False) -> None:

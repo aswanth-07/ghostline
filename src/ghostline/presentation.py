@@ -285,7 +285,10 @@ class GhostlineRenderer:
         screen_shake: bool = True,
         accessibility: dict[str, Any] | None = None,
     ):
-        pygame.init()
+        # Audio owns the mixer lifecycle.  pygame.init() initialized the mixer
+        # here first, preventing the web-safe buffer and channel reservation in
+        # AudioDirector from taking effect.
+        pygame.display.init()
         pygame.font.init()
         self.sim = sim
         self.visible = visible
@@ -566,6 +569,7 @@ class GhostlineRenderer:
         return_array: bool = False,
         lab_stats: dict[str, Any] | None = None,
         touch_controls: dict[str, Any] | None = None,
+        compact_hud: bool = False,
     ) -> np.ndarray | bool:
         dt = min(0.05, self._clock.tick(60) / 1000.0) if self.visible else 1.0 / 60.0
         self._time += dt
@@ -588,9 +592,10 @@ class GhostlineRenderer:
         self._draw_screen_effects()
         self._draw_alert_indicators()
         self._draw_objective_indicator()
-        self._draw_hud(lab_stats)
+        touch_layout = bool(compact_hud or touch_controls is not None)
+        self._draw_hud(lab_stats, touch_layout=touch_layout)
         self._draw_detection_status()
-        self._draw_captions()
+        self._draw_captions(touch_layout=touch_layout)
         if touch_controls:
             self._draw_touch_controls(touch_controls)
         self._apply_accessibility_filter()
@@ -637,11 +642,32 @@ class GhostlineRenderer:
             spacing = 18 if compact else 29
             for index, item in enumerate(items):
                 active = index == selected
+                item_rect = self.menu_item_rect(index, compact=compact)
+                pygame.draw.rect(
+                    self.logical,
+                    (12, 27, 32) if active else (7, 16, 22),
+                    item_rect,
+                    border_radius=3,
+                )
+                pygame.draw.rect(
+                    self.logical,
+                    CYAN if active else (31, 55, 61),
+                    item_rect,
+                    1,
+                    border_radius=3,
+                )
                 if active:
-                    item_rect = self.menu_item_rect(index, compact=compact)
-                    pygame.draw.rect(self.logical, (20, 51, 55), item_rect, border_radius=2)
                     pygame.draw.rect(self.logical, CYAN, (item_rect.x, item_rect.y, 3, item_rect.height))
-                self._text(("> " if active else "  ") + item, 49, y, self.font, CYAN if active else INK)
+                    pygame.draw.polygon(
+                        self.logical,
+                        CYAN,
+                        (
+                            (item_rect.x + 14, item_rect.centery),
+                            (item_rect.x + 9, item_rect.centery - 4),
+                            (item_rect.x + 9, item_rect.centery + 4),
+                        ),
+                    )
+                self._text(item, 59, y, self.font, CYAN if active else INK)
                 y += spacing
         if panel:
             panel_lines = [
@@ -1823,10 +1849,10 @@ class GhostlineRenderer:
             pygame.draw.rect(self.logical, MUTED, (320 - width // 2, 96, width, 18), 1, border_radius=2)
             self._text(self.room_label, 320 - width // 2 + 10, 100, self.font_small, MUTED)
 
-    def _draw_captions(self) -> None:
+    def _draw_captions(self, *, touch_layout: bool = False) -> None:
         if not self.sound_captions_enabled or not self.captions:
             return
-        y = 273 - (len(self.captions) - 1) * 18
+        y = (198 if touch_layout else 273) - (len(self.captions) - 1) * 18
         for caption in self.captions:
             width = min(300, self.font_small.size(caption.text)[0] + 14)
             x = 320 - width // 2
@@ -1849,8 +1875,14 @@ class GhostlineRenderer:
             pixels[:] = lookup[pixels]
         del pixels
 
-    def _draw_hud(self, lab_stats: dict[str, Any] | None) -> None:
+    def _draw_hud(self, lab_stats: dict[str, Any] | None, *, touch_layout: bool = False) -> None:
         hud_small, hud_font = self._hud_fonts[self.hud_scale]
+        if touch_layout and self.hud_scale < 1.25:
+            hud_small, hud_font = self._hud_fonts[1.25]
+        if touch_layout:
+            self._draw_touch_hud(hud_small, hud_font)
+            self._draw_minimap()
+            return
         expanded = self.hud_scale > 1.0
         panel_width = 350 if expanded else 276
         panel_height = 58 if expanded else 49
@@ -1909,6 +1941,72 @@ class GhostlineRenderer:
             phase = "EXTRACT" if self.sim.quota_met else "ACQUIRE DATA"
             self._text(f"{action_text:<11} {latency:4.1f}ms", 19, 91, self.font_small, CYAN)
             self._text(f"{phase}  T{self.sim.trace:02.0f}", 19, 103, self.font_small, GREEN if self.sim.quota_met else AMBER)
+
+    def _draw_touch_hud(self, hud_small: pygame.font.Font, hud_font: pygame.font.Font) -> None:
+        """Render a phone-readable status strip with no duplicate telemetry."""
+
+        panel = pygame.Surface((314, 54), pygame.SRCALPHA)
+        panel.fill((5, 10, 14, 232))
+        self.logical.blit(panel, (8, 7))
+        pygame.draw.rect(self.logical, (42, 80, 84), (8, 7, 314, 54), 1, border_radius=3)
+        pygame.draw.rect(self.logical, CYAN, (8, 7, 3, 54), border_radius=2)
+
+        phase = "EXTRACT" if self.sim.quota_met else "ACQUIRE"
+        phase_color = GREEN if self.sim.quota_met else AMBER
+        self._text(f"T{self.sim.tier}  {TIERS[self.sim.tier].name.upper()}", 17, 12, hud_small, CYAN)
+        self._text(f"{phase}  {self.sim.data}/{self.sim.level.quota}", 176, 11, hud_font, phase_color)
+        self._pips(17, 45, self.sim.integrity, 3, GREEN, label="HP", font=hud_small)
+        self._bar(
+            77,
+            42,
+            92,
+            7,
+            self.sim.trace / TRACE_MAX,
+            RED if self.sim.trace > 70 else AMBER,
+            "TRACE",
+            font=hud_small,
+        )
+        self._bar(180, 42, 76, 7, self.sim.dash_energy / 100.0, CYAN, "DASH", font=hud_small)
+        self._text(
+            f"PULSE {self.sim.pulse_charges}",
+            267,
+            36,
+            hud_small,
+            VIOLET if self.sim.pulse_charges else MUTED,
+        )
+
+        seconds = int(math.ceil(self.sim.remaining_seconds))
+        clock_color = RED if seconds < 25 else INK
+        clock_panel = pygame.Surface((92, 54), pygame.SRCALPHA)
+        clock_panel.fill((5, 10, 14, 232))
+        self.logical.blit(clock_panel, (350, 7))
+        pygame.draw.rect(
+            self.logical,
+            clock_color if seconds < 30 else (42, 80, 84),
+            (350, 7, 92, 54),
+            1,
+            border_radius=3,
+        )
+        self._text(f"{seconds // 60:02d}:{seconds % 60:02d}", 360, 12, self.font_large, clock_color)
+        alert_text = ("CLEAR", "WATCH", "ALERT", "HUNT", "LOCKDOWN")[self.sim.alert_tier]
+        self._text(alert_text, 365, 42, hud_small, RED if self.sim.alert_tier >= 2 else MUTED)
+
+        objective_y = 225
+        if self.sim.active_hack_progress > 0.0:
+            self._bar(226, objective_y, 188, 8, self.sim.active_hack_progress, AMBER, "LINKING")
+        elif self.tutorial_hints and self.sim.context_hint:
+            hint = self.sim.context_hint
+            width = min(310, self.font_small.size(hint)[0] + 16)
+            x = 320 - width // 2
+            pygame.draw.rect(self.logical, (6, 12, 17), (x, objective_y - 4, width, 18), border_radius=3)
+            pygame.draw.rect(self.logical, (38, 78, 82), (x, objective_y - 4, width, 18), 1, border_radius=3)
+            self._text(
+                hint,
+                x + 8,
+                objective_y + 1,
+                self.font_small,
+                CYAN if self.sim.quota_met else INK,
+            )
 
     def _draw_minimap(self) -> None:
         width, height = 100, 56
@@ -2024,6 +2122,7 @@ class GhostlineRenderer:
                 knob_y += int(round(float(delta[1])))
         pygame.draw.circle(overlay, (*INK, 205), (knob_x, knob_y), 13)
         pygame.draw.circle(overlay, (*CYAN, 220), (knob_x, knob_y), 13, 2)
+        self._text("MOVE", TOUCH_JOYSTICK_CENTER[0] - 14, 335, self.font_small, CYAN)
 
         for center, radius, label, active, color in (
             (TOUCH_DASH_CENTER, TOUCH_DASH_RADIUS, "DASH", bool(state.get("dash")), CYAN),

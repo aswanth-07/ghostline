@@ -192,6 +192,9 @@ class GameApp:
             self.renderer.close()
 
     def tick(self) -> None:
+        # The procedural score belongs to active contracts, not menus or pause
+        # screens. Browser/tab focus is tracked independently by AudioDirector.
+        self.audio.set_gameplay_active(self.state in {"play", "lab_play"})
         handlers = {
             "main": self._main_menu,
             "stage_select": self._stage_select,
@@ -226,8 +229,12 @@ class GameApp:
         for event in events:
             if event.type == pygame.QUIT:
                 self.running = False
-            elif event.type == getattr(pygame, "WINDOWFOCUSLOST", -999) and self.state == "play":
-                self.state, self.selection = "pause", 0
+            elif event.type == getattr(pygame, "WINDOWFOCUSLOST", -999):
+                self.audio.set_focus_active(False)
+                if self.state == "play":
+                    self.state, self.selection = "pause", 0
+            elif event.type == getattr(pygame, "WINDOWFOCUSGAINED", -998):
+                self.audio.set_focus_active(True)
         return events
 
     def _event_window_position(self, event: pygame.event.Event) -> tuple[float, float] | None:
@@ -654,7 +661,8 @@ class GameApp:
                             "action": "SYNCING EXACT STATE",
                             "latency_ms": self._agent_latency_ms,
                             "hidden": "--",
-                        }
+                        },
+                        compact_hud=self.touch_controls_enabled,
                     )
                     return
                 self._telemetry["policy_decisions"] += 1
@@ -708,6 +716,7 @@ class GameApp:
             if agent
             else None,
             touch_controls=self._touch_visual_state() if self.touch_controls_enabled and not agent else None,
+            compact_hud=self.touch_controls_enabled,
         )
         if self.sim.terminated or self.sim.truncated:
             self._debrief_agent = agent

@@ -342,9 +342,11 @@ def test_late_browser_decision_holds_simulation_at_exact_policy_boundary() -> No
 
     class Renderer:
         stats = None
+        compact_hud = False
 
-        def draw(self, *, lab_stats):
+        def draw(self, *, lab_stats, compact_hud=False):
             self.stats = lab_stats
+            self.compact_hud = compact_hud
 
     app = GameApp.__new__(GameApp)
     app._events = lambda: []
@@ -360,12 +362,14 @@ def test_late_browser_decision_holds_simulation_at_exact_policy_boundary() -> No
     app.policy_name = "BROWSER ONNX"
     app.renderer = Renderer()
     app.sim = Simulation()
+    app.touch_controls_enabled = True
 
     app._play(agent=True)
 
     assert app._agent_tick == 0
     assert app._telemetry["policy_decisions"] == 0
     assert app.renderer.stats["action"] == "SYNCING EXACT STATE"
+    assert app.renderer.compact_hud is True
 
 
 def test_web_runtime_enables_touch_overlay_for_coarse_pointer_hosts() -> None:
@@ -379,8 +383,84 @@ def test_web_runtime_enables_touch_overlay_for_coarse_pointer_hosts() -> None:
         navigator = Navigator()
         ghostlinePolicy = object()
 
+        @staticmethod
+        def matchMedia(query):
+            return type("Media", (), {"matches": query == "(pointer: coarse)"})()
+
     runtime = web_runtime.GhostlineWebRuntime(App(), host=Host())
     assert runtime.app.touch_controls_enabled is True
+
+
+def test_web_runtime_does_not_cover_hybrid_laptops_with_touch_controls() -> None:
+    class Navigator:
+        maxTouchPoints = 10
+
+    class App:
+        touch_controls_enabled = False
+
+    class Host:
+        navigator = Navigator()
+        ghostlinePolicy = object()
+
+        @staticmethod
+        def matchMedia(query):
+            return type("Media", (), {"matches": query == "(pointer: fine)"})()
+
+    runtime = web_runtime.GhostlineWebRuntime(App(), host=Host())
+    assert runtime.app.touch_controls_enabled is False
+
+
+def test_web_focus_loss_suspends_audio_for_human_and_agent_runs() -> None:
+    class Audio:
+        focus_active = True
+
+        def set_focus_active(self, active: bool) -> None:
+            self.focus_active = active
+
+    class Simulation:
+        terminated = False
+        truncated = False
+
+    class App:
+        selected_tier = 1
+        touch_controls_enabled = False
+        state = "lab_play"
+        sim = Simulation()
+        audio = Audio()
+        selection = 0
+
+    class Shell:
+        @staticmethod
+        def showNotice(*_args) -> None:
+            pass
+
+    class Canvas:
+        focused = False
+
+        def focus(self) -> None:
+            self.focused = True
+
+    canvas = Canvas()
+
+    class Document:
+        @staticmethod
+        def getElementById(_element_id):
+            return canvas
+
+    class Host:
+        ghostlinePolicy = object()
+        ghostlineShell = Shell()
+        document = Document()
+
+    runtime = web_runtime.GhostlineWebRuntime(App(), host=Host())
+    asyncio.run(runtime._handle({"type": "pause-hidden"}))
+    assert runtime.app.audio.focus_active is False
+    # Agent evaluation may continue headlessly, but it must not emit audio.
+    assert runtime.app.state == "lab_play"
+
+    asyncio.run(runtime._handle({"type": "focus"}))
+    assert runtime.app.audio.focus_active is True
+    assert canvas.focused is True
 
 
 def test_mixed_control_run_is_marked_hybrid_and_releases_agent_wrapper() -> None:
@@ -746,6 +826,29 @@ def test_browser_gymnasium_shim_supports_env_seeding_and_spaces() -> None:
     assert box.shape == (2, 3)
     assert box.dtype == np.dtype(np.float32)
     assert dictionary.spaces == {"box": box}
+
+
+def test_web_shell_has_phone_readability_gate_and_collapsible_intel_panel() -> None:
+    template = (ROOT / "web" / "ghostline.tmpl").read_text(encoding="utf-8")
+    shell = (ROOT / "web" / "static" / "ghostline-shell.mjs").read_text(encoding="utf-8")
+    css = (ROOT / "web" / "static" / "ghostline.css").read_text(encoding="utf-8")
+
+    assert 'id="orientation-gate"' in template
+    assert 'id="intel-panel-control"' in template
+    assert 'aria-controls="agent-lab-panel"' in template
+    assert 'id="mobile-lab-close"' in template
+    assert "setIntelPanel" in shell
+    assert 'classList.toggle("lab-panel-collapsed"' in shell
+    assert 'classList.toggle("mobile-lab-open"' in shell
+    assert "(pointer: coarse) and (orientation: portrait)" in css
+    assert "(pointer: coarse) and (orientation: landscape)" in css
+    assert "100dvh" in css
+    assert "env(safe-area-inset" in css
+    assert "width: min(100vw, calc(100dvh * 1.777778)) !important" in css
+    assert "height: min(100dvh, calc(100vw / 1.777778)) !important" in css
+    assert 'element.inert = compact && active' in shell
+    assert 'closeTarget: "canvas"' in shell
+    assert 'aria-live="polite"' not in template.split('class="panel panel-disclosure telemetry-panel"', 1)[1].split("</details>", 1)[0]
 
 
 def test_bundle_rejects_external_or_modified_pygbag_runtime(

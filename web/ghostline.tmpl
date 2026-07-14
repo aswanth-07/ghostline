@@ -106,6 +106,13 @@ asyncio.run(custom_site())
   <script src="./vendor/browserfs-1.4.3.min.js"></script>
 </head>
 <body data-control="human" data-boot="booting" data-embed="false">
+  <div id="orientation-gate" class="orientation-gate" role="status" aria-live="polite">
+    <div class="orientation-card">
+      <span class="phone-rotate" aria-hidden="true"></span>
+      <strong>ROTATE TO LANDSCAPE</strong>
+      <p>Ghostline keeps its full tactical field of view instead of shrinking text and controls into portrait mode.</p>
+    </div>
+  </div>
   <header class="site-header">
     <div class="brand">
       <div class="brand-mark" aria-hidden="true"></div>
@@ -140,6 +147,7 @@ asyncio.run(custom_site())
       <div class="toolbar" aria-label="Game controls">
         <button id="focus-control" type="button">FOCUS GAME</button>
         <button id="fullscreen-control" type="button">FULLSCREEN</button>
+        <button id="intel-panel-control" type="button" aria-controls="agent-lab-panel" aria-expanded="true">HIDE INTEL</button>
         <span class="spacer"></span>
         <button id="human-control" class="primary" type="button" hidden>TAKE CONTROL</button>
         <button id="agent-control" class="agent" type="button">AGENT TAKEOVER</button>
@@ -147,7 +155,11 @@ asyncio.run(custom_site())
       <p class="web-help"><kbd>WASD</kbd> move · <kbd>SHIFT</kbd> dash · <kbd>SPACE</kbd> pulse · <kbd>ESC</kbd> pause. Touch devices get an on-screen stick, dash, pulse, and pause controls.</p>
     </section>
 
-    <aside class="side-panel" aria-label="Live Agent Lab controls">
+    <aside id="agent-lab-panel" class="side-panel" aria-label="Live Agent Lab controls">
+      <div class="mobile-lab-header">
+        <strong>RUN CONTROL</strong>
+        <button id="mobile-lab-close" type="button" aria-label="Close run controls">CLOSE</button>
+      </div>
       <section class="panel">
         <h2>CONTRACT LAUNCHER</h2>
         <div class="contract-grid">
@@ -169,8 +181,8 @@ asyncio.run(custom_site())
         </div>
       </section>
 
-      <section class="panel" aria-live="polite">
-        <h2>LIVE TELEMETRY</h2>
+      <details class="panel panel-disclosure telemetry-panel" open>
+        <summary><span>LIVE TELEMETRY</span><small>RUN SIGNAL</small></summary>
         <div class="live-grid">
           <div><small>TIER</small><strong id="live-tier">T1</strong></div>
           <div><small>SEED</small><strong id="live-seed">—</strong></div>
@@ -181,16 +193,16 @@ asyncio.run(custom_site())
         </div>
         <div class="runtime-line"><span>BACKEND</span><strong id="policy-backend">—</strong></div>
         <div class="runtime-line"><span>POLICY LATENCY</span><strong id="policy-latency">—</strong></div>
-      </section>
+      </details>
 
-      <section class="panel">
-        <h2>MATCHED-RUN SNAPSHOT</h2>
+      <details class="panel panel-disclosure matched-panel">
+        <summary><span>MATCHED RUNS</span><small>OPTIONAL ANALYSIS</small></summary>
         <p id="match-status" class="match-status" data-state="empty">Complete human and agent runs on the same tier and seed.</p>
         <div class="comparison">
           <article class="metric-card"><h3>HUMAN</h3><div id="human-metrics" class="metric-values"></div></article>
           <article class="metric-card"><h3>AGENT</h3><div id="agent-metrics" class="metric-values"></div></article>
         </div>
-      </section>
+      </details>
     </aside>
   </main>
 

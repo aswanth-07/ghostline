@@ -106,12 +106,119 @@ def test_audio_master_music_and_sfx_groups_are_independent(monkeypatch) -> None:
     assert audio.ready
     audio.set_mix(master=0.5, music=0.2, sfx=0.8)
     menu_volume = audio.sounds["menu"].get_volume()
-    ambient_volume = audio.ambient.get_volume()
+    ambient_volume = audio.ambient_channel.get_volume()
     audio.set_mix(music=1.0, sfx=0.1)
 
     assert audio.sounds["menu"].get_volume() < menu_volume
-    assert audio.ambient.get_volume() > ambient_volume
+    assert audio.ambient_channel.get_volume() > ambient_volume
     audio.close()
+
+
+def test_audio_waits_for_gameplay_and_reconnect_replaces_owned_loops(monkeypatch) -> None:
+    monkeypatch.setenv("SDL_AUDIODRIVER", "dummy")
+    import pygame
+
+    from ghostline.audio import AudioDirector
+
+    pygame.mixer.quit()
+    first = AudioDirector(enabled=True)
+    assert first.ready
+    assert first._music_started is False
+    assert first.ambient_channel.get_sound() is None
+    assert first.tension_channel.get_sound() is None
+
+    first.set_gameplay_active(True)
+    first.update(trace=0.0, lockdown=False)
+    assert first._music_started is True
+    assert first.ambient_channel.get_sound() is first.ambient
+    assert first.tension_channel.get_sound() is first.tension
+
+    second = AudioDirector(enabled=True)
+    assert first.ready is False
+    assert second.ready is True
+    assert second._music_started is False
+    assert second.ambient_channel.get_sound() is None
+    assert second.tension_channel.get_sound() is None
+    second.set_gameplay_active(True)
+    second.update(trace=50.0, lockdown=False)
+    assert pygame.mixer.Channel(0).get_sound() is second.ambient
+    assert pygame.mixer.Channel(1).get_sound() is second.tension
+
+    # Closing a retired director cannot stop the replacement's channels.
+    first.close()
+    assert pygame.mixer.Channel(0).get_sound() is second.ambient
+    assert pygame.mixer.Channel(1).get_sound() is second.tension
+    second.close()
+
+
+def test_audio_focus_and_gameplay_state_pause_only_the_owned_score() -> None:
+    from ghostline.audio import AudioDirector
+
+    class Channel:
+        def __init__(self, sound):
+            self.sound = sound
+            self.paused = False
+
+        def get_sound(self):
+            return self.sound
+
+        def pause(self) -> None:
+            self.paused = True
+
+        def unpause(self) -> None:
+            self.paused = False
+
+    audio = AudioDirector.__new__(AudioDirector)
+    audio.ready = True
+    audio.enabled = True
+    audio._gameplay_active = True
+    audio._focus_active = True
+    audio.ambient = object()
+    audio.tension = object()
+    audio.ambient_channel = Channel(audio.ambient)
+    audio.tension_channel = Channel(audio.tension)
+    audio.sounds = {}
+    audio._sfx_channels = []
+
+    audio.set_focus_active(False)
+    assert audio.ambient_channel.paused is True
+    assert audio.tension_channel.paused is True
+    audio.set_focus_active(True)
+    assert audio.ambient_channel.paused is False
+    audio.set_gameplay_active(False)
+    assert audio.ambient_channel.paused is True
+
+
+def test_procedural_score_has_baked_headroom_and_no_mains_hum_fundamental() -> None:
+    from ghostline.audio import AudioDirector
+
+    audio = AudioDirector.__new__(AudioDirector)
+    ambient = audio._ambient_wave(8.0)
+    tension = audio._tension_wave(8.0)
+
+    assert float(np.sqrt(np.mean(np.square(ambient)))) < 0.05
+    assert float(np.sqrt(np.mean(np.square(tension)))) < 0.05
+    assert float(np.max(np.abs(ambient))) < 0.1
+    assert float(np.max(np.abs(tension))) < 0.13
+
+    frequencies = np.fft.rfftfreq(len(ambient), d=1.0 / audio._sample_rate)
+    ambient_spectrum = np.abs(np.fft.rfft(ambient))
+    low_band = float(np.sum(np.square(ambient_spectrum[frequencies < 70.0])))
+    total = float(np.sum(np.square(ambient_spectrum)))
+    assert low_band / total < 1e-6
+
+
+def test_renderer_does_not_preinitialize_the_audio_mixer(monkeypatch) -> None:
+    monkeypatch.setenv("SDL_VIDEODRIVER", "dummy")
+    monkeypatch.setenv("SDL_AUDIODRIVER", "dummy")
+    import pygame
+
+    from ghostline.presentation import GhostlineRenderer
+
+    pygame.mixer.quit()
+    renderer = GhostlineRenderer(GhostlineSimulation(seed=37, tier=1), visible=False)
+    assert pygame.mixer.get_init() is None
+    renderer.close()
 
 
 def test_renderer_accessibility_modes_and_captions_are_headless_safe(monkeypatch) -> None:
@@ -218,6 +325,32 @@ def test_touch_overlay_is_visible_and_headless_safe(monkeypatch) -> None:
 
     assert plain.shape == touch.shape == (360, 640, 3)
     assert not np.array_equal(plain, touch)
+
+
+def test_touch_hud_uses_a_concise_phone_readable_status_strip(monkeypatch) -> None:
+    monkeypatch.setenv("SDL_VIDEODRIVER", "dummy")
+    monkeypatch.setenv("SDL_AUDIODRIVER", "dummy")
+    from ghostline.presentation import GhostlineRenderer
+
+    renderer = GhostlineRenderer(GhostlineSimulation(seed=8, tier=2), visible=False)
+    labels: list[str] = []
+    original_text = renderer._text
+
+    def tracked_text(text, x, y, font, color):
+        labels.append(str(text))
+        original_text(text, x, y, font, color)
+
+    monkeypatch.setattr(renderer, "_text", tracked_text)
+    renderer.logical.fill((0, 0, 0))
+    renderer._draw_hud(None, touch_layout=True)
+    renderer.close()
+
+    assert any(label.startswith("T2  SURVEILLANCE") for label in labels)
+    assert any(label.startswith("ACQUIRE  ") for label in labels)
+    assert "HP" in labels
+    assert "TRACE" in labels
+    assert "DASH" in labels
+    assert "INTEGRITY" not in labels
 
 
 def test_menu_uses_flat_gameplay_schematic_without_loading_key_art(monkeypatch) -> None:

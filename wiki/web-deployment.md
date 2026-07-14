@@ -19,15 +19,16 @@ Ghostline's browser release is a static Pygbag 0.9.3 build. The deterministic Py
 The model is never fetched on ordinary human play. ONNX Runtime and the content-addressed model are requested only after `AGENT TAKEOVER`, `REPLAY PORTFOLIO AGENT RUN`, or `?autoplay=1`. The replay action always starts a fresh tier-6 seed-2,000,000 run, while ordinary takeover preserves an already active human contract.
 Campaign progression and settings use the desktop JSON contract inside the Python runtime and are mirrored to browser `localStorage`, so refreshes retain unlocked tiers without introducing a second save schema. Storage denial in a restricted iframe falls back to a fresh in-memory profile.
 
-Coarse-pointer/touch devices enable the in-canvas movement stick, dash, pulse, and pause contacts before the first mission frame. The canvas uses `touch-action: none` so browser panning cannot steal a held direction; HTML contract controls remain native pointer/touch targets. Mouse and touch selection inside the Pygame menus is mapped through the same letterbox transform used for rendering.
+Coarse-pointer phones enable the in-canvas movement stick, dash, pulse, and pause contacts before the first mission frame; a hybrid touch laptop that still reports a fine primary pointer remains in the desktop layout. The canvas uses `touch-action: none` so browser panning cannot steal a held direction; HTML contract controls remain native pointer/touch targets. Mouse and touch selection inside the Pygame menus is mapped through the same letterbox transform used for rendering. Portrait phones receive an explicit rotate-to-landscape readability gate rather than a silently compressed playfield. Landscape uses dynamic viewport height and safe-area insets, offers fullscreen from the launch gesture, and contains the fixed 16:9 framebuffer instead of stretching it to the phone's physical aspect ratio. Contract and telemetry controls remain in a dismissible `RUN SETUP` drawer that behaves as a modal while open, makes the background inert, and restores focus to the initiating control or game canvas when it closes.
 
 ## Portfolio embed contract
 
 Use `?embed=1&autoplay=0` for the portfolio presentation. Embed mode removes only
 the redundant standalone brand header and legal footer; it retains the explicit
-audio/focus gate, keyboard help, human/agent controls, contract launcher, live
-telemetry, and matched-run cards. At narrow widths the lab moves below the game
-instead of being removed. `autoplay=0` never bypasses Chrome's user-activation
+audio/focus gate, human/agent controls, contract launcher, live telemetry, and
+matched-run cards. At narrow widths the playfield comes first and the lab moves
+into the accessible `RUN SETUP` drawer; no policy or telemetry functionality is
+removed. `autoplay=0` never bypasses Chrome's user-activation
 gate and never loads the policy without an explicit takeover.
 
 Because the portfolio and game are separate Vercel origins, the iframe includes
@@ -97,6 +98,15 @@ framebuffer across the complete game frame. The WebAssembly presentation path
 also scales the logical 640x360 scene to the exact browser canvas dimensions,
 so browser zoom and intermediate viewport widths cannot fall back to a small
 centered image. Desktop builds retain crisp integer-only scaling.
+
+The standalone shell also exposes an `INTEL PANEL` toggle. Wide-screen users
+can collapse the full launcher/telemetry column and give the 16:9 playfield the
+workspace; live telemetry and matched-run analysis remain opt-in disclosures.
+The toggle carries `aria-controls`/`aria-expanded`, restores focus on close,
+and leaves the deterministic simulation and model interface untouched. Rapid
+5 Hz raw telemetry is deliberately not an `aria-live` region; controller and
+run-state changes use the lower-frequency status notice so assistive technology
+is not flooded with continuously changing numbers.
 
 ## Build commands
 
