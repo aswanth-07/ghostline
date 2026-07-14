@@ -152,6 +152,74 @@ def test_renderer_accessibility_modes_and_captions_are_headless_safe(monkeypatch
     assert renderer.sound_captions_enabled is True
 
 
+def test_pointer_selects_the_clicked_contract_instead_of_only_hovering(monkeypatch) -> None:
+    monkeypatch.setenv("SDL_VIDEODRIVER", "dummy")
+    monkeypatch.setenv("SDL_AUDIODRIVER", "dummy")
+    import pygame
+
+    from ghostline.app import GameApp
+    from ghostline.presentation import GhostlineRenderer
+
+    renderer = GhostlineRenderer(GhostlineSimulation(seed=7, tier=1), visible=False)
+    renderer.window = pygame.display.set_mode((640, 360))
+
+    class SilentAudio:
+        def menu_move(self) -> None:
+            pass
+
+        def menu_confirm(self) -> None:
+            pass
+
+    app = GameApp.__new__(GameApp)
+    app.renderer = renderer
+    app.audio = SilentAudio()
+    app.selection = 0
+    app.touch_controls_enabled = False
+    app.settings = {"bindings": dict(DEFAULT_BINDINGS)}
+    clicked = renderer.menu_item_rect(4).center
+    event = pygame.event.Event(pygame.MOUSEBUTTONUP, {"pos": clicked, "button": 1})
+
+    assert app._menu_events([event], 6) == "confirm"
+    assert app.selection == 4
+    renderer.close()
+
+
+def test_touch_controller_maps_diagonal_move_dash_and_pulse_without_changing_action_contract() -> None:
+    from ghostline.app import GameApp
+    from ghostline.presentation import TOUCH_JOYSTICK_CENTER
+
+    app = GameApp.__new__(GameApp)
+    app._touch_roles = {1: "move", 2: "dash", 3: "pulse"}
+    app._touch_points = {
+        1: (TOUCH_JOYSTICK_CENTER[0] + 30, TOUCH_JOYSTICK_CENTER[1] - 30),
+        2: (0.0, 0.0),
+        3: (0.0, 0.0),
+    }
+
+    action = app._touch_action()
+    assert action.move == 2
+    assert action.dash is True
+    assert action.pulse is True
+    assert 0 <= action.encode() < 36
+
+
+def test_touch_overlay_is_visible_and_headless_safe(monkeypatch) -> None:
+    monkeypatch.setenv("SDL_VIDEODRIVER", "dummy")
+    monkeypatch.setenv("SDL_AUDIODRIVER", "dummy")
+    from ghostline.presentation import GhostlineRenderer, TOUCH_JOYSTICK_CENTER
+
+    renderer = GhostlineRenderer(GhostlineSimulation(seed=8, tier=2), visible=False)
+    plain = renderer.draw(return_array=True)
+    touch = renderer.draw(
+        return_array=True,
+        touch_controls={"move_point": TOUCH_JOYSTICK_CENTER, "dash": True, "pulse": False},
+    )
+    renderer.close()
+
+    assert plain.shape == touch.shape == (360, 640, 3)
+    assert not np.array_equal(plain, touch)
+
+
 def test_menu_uses_flat_gameplay_schematic_without_loading_key_art(monkeypatch) -> None:
     monkeypatch.setenv("SDL_VIDEODRIVER", "dummy")
     monkeypatch.setenv("SDL_AUDIODRIVER", "dummy")

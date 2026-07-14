@@ -13,6 +13,7 @@ const agentShowcaseSeeds = {
   5: 1039028,
   6: 1047023,
 };
+const portfolioDemo = { tier: 6, seed: 2000000 };
 let gameReady = false;
 let lastStatus = "active";
 let currentMetrics = null;
@@ -28,8 +29,8 @@ const seed = () => {
   return raw ? Math.max(0, Math.min(2147483647, Number(raw) || 0)) : null;
 };
 
-function queue(type) {
-  commands.push({ type, tier: tier(), seed: seed() });
+function queue(type, extra = {}) {
+  commands.push({ type, tier: tier(), seed: seed(), ...extra });
 }
 
 function formatMetric(value, suffix = "") {
@@ -181,7 +182,7 @@ function maybeAutoplay() {
   setTimeout(() => { void requestAgentControl(); }, 1400);
 }
 
-async function requestAgentControl() {
+async function requestAgentControl({ fresh = false } = {}) {
   if (agentActivationPending) return;
   // A Watch Agent request from the menu should demonstrate the selected
   // recurrent policy, not roll directly into its known procedural failure
@@ -202,7 +203,7 @@ async function requestAgentControl() {
     if (!agentActivationPending) return;
     if (loaded) {
       setPolicyState("loading", "CONNECTING AGENT");
-      queue("agent-ready");
+      queue("agent-ready", { fresh });
     } else {
       agentActivationPending = false;
       setControlMode("human");
@@ -213,6 +214,13 @@ async function requestAgentControl() {
     setControlMode("human");
     showNotice(`The policy could not load: ${error.message}`, "error");
   }
+}
+
+async function replayPortfolioAgentRun() {
+  if ($("tier-select")) $("tier-select").value = String(portfolioDemo.tier);
+  if ($("seed-input")) $("seed-input").value = String(portfolioDemo.seed);
+  showNotice("Loading the exact tier-six contract and checkpoint used by the portfolio recording.", "info");
+  await requestAgentControl({ fresh: true });
 }
 
 function restoreHumanControl() {
@@ -261,6 +269,7 @@ globalThis.ghostlineShell = {
 
 $("play-selected")?.addEventListener("click", () => queue("launch-human"));
 $("agent-control")?.addEventListener("click", () => { void requestAgentControl(); });
+$("portfolio-agent-control")?.addEventListener("click", () => { void replayPortfolioAgentRun(); });
 $("human-control")?.addEventListener("click", restoreHumanControl);
 $("fullscreen-control")?.addEventListener("click", toggleFullscreen);
 $("focus-control")?.addEventListener("click", () => $("canvas")?.focus());

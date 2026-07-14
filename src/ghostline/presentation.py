@@ -28,6 +28,13 @@ from ghostline.resources import runtime_asset_path
 from ghostline.types import GuardGrade, GuardMode, Prop, SimEvent, Tile
 
 LOGICAL_SIZE = (640, 360)
+TOUCH_JOYSTICK_CENTER = (76, 286)
+TOUCH_JOYSTICK_RADIUS = 42
+TOUCH_DASH_CENTER = (574, 255)
+TOUCH_DASH_RADIUS = 27
+TOUCH_PULSE_CENTER = (516, 255)
+TOUCH_PULSE_RADIUS = 23
+TOUCH_PAUSE_RECT = pygame.Rect(592, 82, 38, 25)
 WINDOW_SIZE = (1280, 720)
 
 
@@ -553,7 +560,13 @@ class GhostlineRenderer:
                 )
             self.particles = self.particles[-72:]
 
-    def draw(self, *, return_array: bool = False, lab_stats: dict[str, Any] | None = None) -> np.ndarray | bool:
+    def draw(
+        self,
+        *,
+        return_array: bool = False,
+        lab_stats: dict[str, Any] | None = None,
+        touch_controls: dict[str, Any] | None = None,
+    ) -> np.ndarray | bool:
         dt = min(0.05, self._clock.tick(60) / 1000.0) if self.visible else 1.0 / 60.0
         self._time += dt
         self._update_camera(dt)
@@ -578,6 +591,8 @@ class GhostlineRenderer:
         self._draw_hud(lab_stats)
         self._draw_detection_status()
         self._draw_captions()
+        if touch_controls:
+            self._draw_touch_controls(touch_controls)
         self._apply_accessibility_filter()
         return self._present(return_array=return_array)
 
@@ -623,8 +638,9 @@ class GhostlineRenderer:
             for index, item in enumerate(items):
                 active = index == selected
                 if active:
-                    pygame.draw.rect(self.logical, (20, 51, 55), (40, y - 4, 285, spacing - 5), border_radius=2)
-                    pygame.draw.rect(self.logical, CYAN, (40, y - 4, 3, spacing - 5))
+                    item_rect = self.menu_item_rect(index, compact=compact)
+                    pygame.draw.rect(self.logical, (20, 51, 55), item_rect, border_radius=2)
+                    pygame.draw.rect(self.logical, CYAN, (item_rect.x, item_rect.y, 3, item_rect.height))
                 self._text(("> " if active else "  ") + item, 49, y, self.font, CYAN if active else INK)
                 y += spacing
         if panel:
@@ -648,6 +664,36 @@ class GhostlineRenderer:
             self._text(footer, 42, 332, self.font_small, MUTED)
         self._apply_accessibility_filter()
         return self._present(return_array=return_array)
+
+    @staticmethod
+    def menu_item_rect(index: int, *, compact: bool = False) -> pygame.Rect:
+        """Return the logical hit target used by both drawing and pointer input."""
+
+        y = (124 if compact else 137) + index * (18 if compact else 29)
+        spacing = 18 if compact else 29
+        return pygame.Rect(40, y - 6, 285, spacing - 1)
+
+    def logical_point(self, position: tuple[float, float]) -> tuple[float, float] | None:
+        """Map a window/canvas pointer coordinate into the 640x360 world."""
+
+        target_width, target_height = self.window.get_size()
+        scaled_width, scaled_height = _presentation_scaled_size((target_width, target_height))
+        left = (target_width - scaled_width) / 2.0
+        top = (target_height - scaled_height) / 2.0
+        x = float(position[0]) - left
+        y = float(position[1]) - top
+        if x < 0.0 or y < 0.0 or x >= scaled_width or y >= scaled_height:
+            return None
+        return x * LOGICAL_SIZE[0] / scaled_width, y * LOGICAL_SIZE[1] / scaled_height
+
+    def menu_item_at(self, position: tuple[float, float], count: int, *, compact: bool = False) -> int | None:
+        logical = self.logical_point(position)
+        if logical is None:
+            return None
+        for index in range(count):
+            if self.menu_item_rect(index, compact=compact).collidepoint(logical):
+                return index
+        return None
 
     def _present(self, *, return_array: bool) -> np.ndarray | bool:
         if return_array:
@@ -1954,6 +2000,45 @@ class GhostlineRenderer:
             pygame.draw.rect(self.logical, CYAN if index % 2 else VIOLET, (x, 311 - (index % 3), 5, 1))
         pygame.draw.line(self.logical, CYAN, (0, 18), (640, 18), 2)
         self._text("PROCEDURAL INFILTRATION", 452, 337, self.font_small, MUTED)
+
+    def _draw_touch_controls(self, state: dict[str, Any]) -> None:
+        """Draw restrained multi-touch controls over the human playfield."""
+
+        overlay = pygame.Surface(LOGICAL_SIZE, pygame.SRCALPHA)
+        move_point = state.get("move_point")
+        joystick_active = move_point is not None
+        pygame.draw.circle(
+            overlay,
+            (*CYAN, 62 if joystick_active else 34),
+            TOUCH_JOYSTICK_CENTER,
+            TOUCH_JOYSTICK_RADIUS,
+        )
+        pygame.draw.circle(overlay, (*CYAN, 150), TOUCH_JOYSTICK_CENTER, TOUCH_JOYSTICK_RADIUS, 2)
+        knob_x, knob_y = TOUCH_JOYSTICK_CENTER
+        if move_point is not None:
+            delta = np.asarray(move_point, dtype=np.float32) - np.asarray(TOUCH_JOYSTICK_CENTER, dtype=np.float32)
+            length = float(np.linalg.norm(delta))
+            if length > 0.0:
+                delta *= min(25.0, length) / length
+                knob_x += int(round(float(delta[0])))
+                knob_y += int(round(float(delta[1])))
+        pygame.draw.circle(overlay, (*INK, 205), (knob_x, knob_y), 13)
+        pygame.draw.circle(overlay, (*CYAN, 220), (knob_x, knob_y), 13, 2)
+
+        for center, radius, label, active, color in (
+            (TOUCH_DASH_CENTER, TOUCH_DASH_RADIUS, "DASH", bool(state.get("dash")), CYAN),
+            (TOUCH_PULSE_CENTER, TOUCH_PULSE_RADIUS, "PULSE", bool(state.get("pulse")), VIOLET),
+        ):
+            pygame.draw.circle(overlay, (*color, 112 if active else 42), center, radius)
+            pygame.draw.circle(overlay, (*color, 225 if active else 150), center, radius, 2)
+            label_width = self.font_small.size(label)[0]
+            self._text(label, center[0] - label_width / 2, center[1] - 4, self.font_small, INK if active else color)
+
+        pygame.draw.rect(overlay, (4, 10, 14, 138), TOUCH_PAUSE_RECT, border_radius=4)
+        pygame.draw.rect(overlay, (*INK, 145), TOUCH_PAUSE_RECT, 1, border_radius=4)
+        pygame.draw.rect(overlay, (*INK, 190), (604, 89, 3, 11))
+        pygame.draw.rect(overlay, (*INK, 190), (614, 89, 3, 11))
+        self.logical.blit(overlay, (0, 0))
 
     def _draw_native_text(self, target: pygame.Surface, scaled_size: tuple[int, int]) -> None:
         """Composite recorded text at output resolution instead of scaling it."""

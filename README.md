@@ -2,7 +2,7 @@
 
 Ghostline is a procedural 2D stealth-infiltration game and reinforcement-learning benchmark. Steal enough data to satisfy a contract, manage an escalating trace signature, and extract before security closes the route.
 
-The keyboard game, Agent Lab, recurrent policy, evaluation tools, and replay recorder all use the same deterministic 60 Hz headless simulation.
+Keyboard, cursor, and touch play, Agent Lab, the recurrent policy, evaluation tools, and the replay recorder all use the same deterministic 60 Hz headless simulation and semantic action contract.
 
 ## Measured neural result
 
@@ -20,7 +20,9 @@ and low-rate consolidation. The result is bound to checkpoint
 | 5 - Lockdown | 95% | 495/500 (99.0%) | 97.68-99.57% | 0.560 | 27.86 s |
 | 6 - Ghostline | 85% | 448/500 (89.6%) | 86.62-91.98% | 1.222 | 31.07 s |
 
-[Watch the 30-second tier-6 agent demo](videos/ghostline-demo.mp4). The full
+[Watch the 30-second tier-6 agent demo](videos/ghostline-demo.mp4). It records
+the bundled champion on tier 6, seed `2,000,000`; desktop Agent Lab and the web
+release expose an exact replay of that same contract. The full
 [JSON](benchmarks/neural/champion-final-8m-500.json),
 [aggregate CSV](benchmarks/neural/champion-final-8m-500.csv), and
 [episode CSV](benchmarks/neural/champion-final-8m-500.episodes.csv) include

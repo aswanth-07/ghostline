@@ -232,6 +232,7 @@ def test_browser_policy_retains_slow_inference_until_it_can_be_consumed() -> Non
     policy = web_runtime.BrowserOnnxPolicy(Host)
     assert policy.act(observation) == (0, None)
     assert policy.prefetched is True
+    assert policy.waiting_for_action is True
     assert policy.act(observation) == (0, None)
     policy.prefetch(observation)
     assert Host.ghostlinePolicy.steps == 1
@@ -240,9 +241,10 @@ def test_browser_policy_retains_slow_inference_until_it_can_be_consumed() -> Non
     Host.ghostlinePolicy.complete = True
     assert policy.act(observation) == (3, None)
     assert policy.prefetched is False
+    assert policy.waiting_for_action is False
 
 
-def test_agent_handoff_phase_advances_prefetch_without_duplicate_startup_request() -> None:
+def test_agent_handoff_prefetches_the_exact_initial_decision_boundary_once() -> None:
     observation = {
         "ego": np.zeros(24, dtype=np.float32),
         "objective": np.zeros(8, dtype=np.float32),
@@ -313,12 +315,72 @@ def test_agent_handoff_phase_advances_prefetch_without_duplicate_startup_request
     assert Host.ghostlineShell.policy_state[0] == "loading"
     assert "first policy decision" in Host.ghostlineShell.notice[0]
 
-    runtime.app._agent_tick = 1
     runtime._prefetch_agent_action()
     assert runtime.policy.prefetched is True
     assert Host.ghostlinePolicy.payload["ego"] == [0.0] * 24
     runtime._prefetch_agent_action()
     assert Host.ghostlinePolicy.inferenceCount == 0
+
+
+def test_late_browser_decision_holds_simulation_at_exact_policy_boundary() -> None:
+    from ghostline.app import GameApp
+
+    class WaitingPolicy:
+        waiting_for_action = True
+
+        def act(self, observation, hidden, *, deterministic):
+            del observation, hidden, deterministic
+            return 0, None
+
+    class Environment:
+        def _observation(self):
+            return {"exact": "boundary"}
+
+    class Simulation:
+        def advance(self, action, *, ticks):
+            raise AssertionError(f"simulation advanced with {action=} and {ticks=}")
+
+    class Renderer:
+        stats = None
+
+        def draw(self, *, lab_stats):
+            self.stats = lab_stats
+
+    app = GameApp.__new__(GameApp)
+    app._events = lambda: []
+    app.running = True
+    app.state = "lab_play"
+    app.learned_policy = WaitingPolicy()
+    app.agent_env = Environment()
+    app.agent_hidden = None
+    app._agent_tick = 0
+    app._agent_action = 0
+    app._agent_latency_ms = 0.0
+    app._telemetry = {"policy_decisions": 0, "policy_latencies_ms": []}
+    app.policy_name = "BROWSER ONNX"
+    app.renderer = Renderer()
+    app.sim = Simulation()
+
+    app._play(agent=True)
+
+    assert app._agent_tick == 0
+    assert app._telemetry["policy_decisions"] == 0
+    assert app.renderer.stats["action"] == "SYNCING EXACT STATE"
+
+
+def test_web_runtime_enables_touch_overlay_for_coarse_pointer_hosts() -> None:
+    class Navigator:
+        maxTouchPoints = 5
+
+    class App:
+        touch_controls_enabled = False
+
+    class Host:
+        navigator = Navigator()
+        ghostlinePolicy = object()
+
+    runtime = web_runtime.GhostlineWebRuntime(App(), host=Host())
+    assert runtime.app.touch_controls_enabled is True
 
 
 def test_mixed_control_run_is_marked_hybrid_and_releases_agent_wrapper() -> None:
@@ -617,7 +679,7 @@ def test_web_shell_and_policy_bridge_include_release_behaviors() -> None:
     shell = (ROOT / "web" / "static" / "ghostline-shell.mjs").read_text(encoding="utf-8")
     embed = (ROOT / "web" / "static" / "embed-bridge.mjs").read_text(encoding="utf-8")
     policy = (ROOT / "web" / "static" / "policy-bridge.mjs").read_text(encoding="utf-8")
-    for element in ("launch-gate", "agent-control", "human-control", "tier-select", "seed-input", "fullscreen-control"):
+    for element in ("launch-gate", "agent-control", "portfolio-agent-control", "human-control", "tier-select", "seed-input", "fullscreen-control"):
         assert f'id="{element}"' in template
     assert "AGENT TAKEOVER" in template
     assert 'get("embed") === "1"' in template
@@ -630,7 +692,10 @@ def test_web_shell_and_policy_bridge_include_release_behaviors() -> None:
     assert "agentShowcaseSeeds" in shell
     assert "1047023" in shell
     assert '$("seed-input").value = String(agentShowcaseSeeds[tier()])' in shell
-    assert 'queue("agent-ready")' in shell
+    assert 'queue("agent-ready", { fresh })' in shell
+    assert "replayPortfolioAgentRun" in shell
+    assert "2000000" in shell
+    assert "Touch devices get an on-screen stick" in template
     assert 'setControlMode("handoff")' in shell
     assert 'document.body.dataset.control === "handoff"' in shell
     assert "CANCEL HANDOFF" in shell
@@ -658,6 +723,7 @@ def test_web_shell_and_policy_bridge_include_release_behaviors() -> None:
     css = (ROOT / "web" / "static" / "ghostline.css").read_text(encoding="utf-8")
     assert "width: 100% !important" in css
     assert "height: 100% !important" in css
+    assert "touch-action: none" in css
     assert 'queue("pause-hidden")' in shell
     assert 'queue("pause-focus")' in shell
     assert 'metrics.mode === "hybrid"' in shell
