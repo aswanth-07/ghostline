@@ -1881,7 +1881,6 @@ class GhostlineRenderer:
             hud_small, hud_font = self._hud_fonts[1.25]
         if touch_layout:
             self._draw_touch_hud(hud_small, hud_font)
-            self._draw_minimap()
             return
         expanded = self.hud_scale > 1.0
         panel_width = 350 if expanded else 276
@@ -1943,53 +1942,50 @@ class GhostlineRenderer:
             self._text(f"{phase}  T{self.sim.trace:02.0f}", 19, 103, self.font_small, GREEN if self.sim.quota_met else AMBER)
 
     def _draw_touch_hud(self, hud_small: pygame.font.Font, hud_font: pygame.font.Font) -> None:
-        """Render a phone-readable status strip with no duplicate telemetry."""
+        """Render one calm, phone-readable status band.
 
-        panel = pygame.Surface((314, 54), pygame.SRCALPHA)
-        panel.fill((5, 10, 14, 232))
+        The desktop HUD uses separate status, clock, and minimap cards. On a
+        phone those islands consumed most of the top edge while each remained
+        too small to scan. The touch layout keeps only immediate decisions in
+        one band; world objective/threat markers carry navigation.
+        """
+
+        panel = pygame.Surface((624, 48), pygame.SRCALPHA)
+        panel.fill((4, 9, 14, 218))
         self.logical.blit(panel, (8, 7))
-        pygame.draw.rect(self.logical, (42, 80, 84), (8, 7, 314, 54), 1, border_radius=3)
-        pygame.draw.rect(self.logical, CYAN, (8, 7, 3, 54), border_radius=2)
+        pygame.draw.rect(self.logical, (46, 91, 94), (8, 7, 624, 48), 1, border_radius=4)
+        pygame.draw.rect(self.logical, CYAN, (8, 7, 3, 48), border_radius=2)
 
         phase = "EXTRACT" if self.sim.quota_met else "ACQUIRE"
         phase_color = GREEN if self.sim.quota_met else AMBER
-        self._text(f"T{self.sim.tier}  {TIERS[self.sim.tier].name.upper()}", 17, 12, hud_small, CYAN)
-        self._text(f"{phase}  {self.sim.data}/{self.sim.level.quota}", 176, 11, hud_font, phase_color)
-        self._pips(17, 45, self.sim.integrity, 3, GREEN, label="HP", font=hud_small)
+        self._text(f"T{self.sim.tier}  {TIERS[self.sim.tier].name.upper()}", 17, 11, hud_small, CYAN)
+        self._text(f"{phase}  {self.sim.data}/{self.sim.level.quota}", 176, 10, hud_font, phase_color)
+        self._pips(17, 40, self.sim.integrity, 3, GREEN, label="HP", font=hud_small)
         self._bar(
-            77,
-            42,
-            92,
-            7,
+            79,
+            38,
+            88,
+            6,
             self.sim.trace / TRACE_MAX,
             RED if self.sim.trace > 70 else AMBER,
             "TRACE",
             font=hud_small,
         )
-        self._bar(180, 42, 76, 7, self.sim.dash_energy / 100.0, CYAN, "DASH", font=hud_small)
+        self._bar(181, 38, 72, 6, self.sim.dash_energy / 100.0, CYAN, "DASH", font=hud_small)
         self._text(
             f"PULSE {self.sim.pulse_charges}",
-            267,
-            36,
+            270,
+            31,
             hud_small,
             VIOLET if self.sim.pulse_charges else MUTED,
         )
 
         seconds = int(math.ceil(self.sim.remaining_seconds))
         clock_color = RED if seconds < 25 else INK
-        clock_panel = pygame.Surface((92, 54), pygame.SRCALPHA)
-        clock_panel.fill((5, 10, 14, 232))
-        self.logical.blit(clock_panel, (350, 7))
-        pygame.draw.rect(
-            self.logical,
-            clock_color if seconds < 30 else (42, 80, 84),
-            (350, 7, 92, 54),
-            1,
-            border_radius=3,
-        )
-        self._text(f"{seconds // 60:02d}:{seconds % 60:02d}", 360, 12, self.font_large, clock_color)
         alert_text = ("CLEAR", "WATCH", "ALERT", "HUNT", "LOCKDOWN")[self.sim.alert_tier]
-        self._text(alert_text, 365, 42, hud_small, RED if self.sim.alert_tier >= 2 else MUTED)
+        alert_color = RED if self.sim.alert_tier >= 2 else MUTED
+        self._text(alert_text, 376, 30, hud_small, alert_color)
+        self._text(f"{seconds // 60:02d}:{seconds % 60:02d}", 543, 16, hud_font, clock_color)
 
         objective_y = 225
         if self.sim.active_hack_progress > 0.0:

@@ -341,6 +341,13 @@ def test_touch_hud_uses_a_concise_phone_readable_status_strip(monkeypatch) -> No
         original_text(text, x, y, font, color)
 
     monkeypatch.setattr(renderer, "_text", tracked_text)
+    minimap_calls = 0
+
+    def tracked_minimap():
+        nonlocal minimap_calls
+        minimap_calls += 1
+
+    monkeypatch.setattr(renderer, "_draw_minimap", tracked_minimap)
     renderer.logical.fill((0, 0, 0))
     renderer._draw_hud(None, touch_layout=True)
     renderer.close()
@@ -351,6 +358,7 @@ def test_touch_hud_uses_a_concise_phone_readable_status_strip(monkeypatch) -> No
     assert "TRACE" in labels
     assert "DASH" in labels
     assert "INTEGRITY" not in labels
+    assert minimap_calls == 0
 
 
 def test_menu_uses_flat_gameplay_schematic_without_loading_key_art(monkeypatch) -> None:

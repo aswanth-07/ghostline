@@ -804,6 +804,7 @@ def test_web_shell_and_policy_bridge_include_release_behaviors() -> None:
     assert "width: 100% !important" in css
     assert "height: 100% !important" in css
     assert "touch-action: none" in css
+    assert "image-rendering: auto !important" in css
     assert 'queue("pause-hidden")' in shell
     assert 'queue("pause-focus")' in shell
     assert 'metrics.mode === "hybrid"' in shell
@@ -844,6 +845,7 @@ def test_web_shell_has_phone_readability_gate_and_collapsible_intel_panel() -> N
     assert "(pointer: coarse) and (orientation: landscape)" in css
     assert "100dvh" in css
     assert "env(safe-area-inset" in css
+    assert 'dataset.scaling = "smooth-mobile"' in (ROOT / "web" / "main.py").read_text(encoding="utf-8")
     assert "width: min(100vw, calc(100dvh * 1.777778)) !important" in css
     assert "height: min(100dvh, calc(100vw / 1.777778)) !important" in css
     assert 'element.inert = compact && active' in shell
