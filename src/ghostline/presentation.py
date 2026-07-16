@@ -69,15 +69,19 @@ def _presentation_scaled_size(
         )
     return LOGICAL_SIZE[0] * integer_scale, LOGICAL_SIZE[1] * integer_scale
 
-BG = (8, 12, 17)
-INK = (222, 235, 232)
-MUTED = (121, 142, 145)
-CYAN = (72, 231, 218)
-TEAL = (44, 165, 157)
-AMBER = (245, 184, 76)
-RED = (244, 78, 88)
-VIOLET = (172, 101, 255)
-GREEN = (87, 226, 139)
+# Shared with the portfolio shell: neutral black surfaces, high-clarity text,
+# cyan interaction, magenta agent/security accents, and warm objective states.
+# The world keeps its authored room palettes; these tokens unify the interface
+# without recolouring the facility into a single neon wash.
+BG = (0, 0, 0)
+INK = (244, 247, 251)
+MUTED = (157, 169, 188)
+CYAN = (0, 229, 255)
+TEAL = (22, 157, 177)
+AMBER = (255, 203, 117)
+RED = (255, 74, 104)
+VIOLET = (255, 74, 164)
+GREEN = (108, 255, 177)
 
 # Presentation mirrors the simulation's literal sight contract.  Keeping these
 # values named here makes it difficult for the visible warning footprint to
@@ -312,7 +316,7 @@ class GhostlineRenderer:
         self.color_safe = False
         self.reduced_motion = False
         self.reduced_flashes = True
-        self.sound_captions_enabled = True
+        self.sound_captions_enabled = False
         self.hud_scale = 1.0
         self.timer_warnings = True
         self.tutorial_hints = True
@@ -346,6 +350,7 @@ class GhostlineRenderer:
             self._font_design_sizes[id(regular)] = int(round(13 * scale))
         self._native_text_commands: list[NativeTextCommand] = []
         self._native_font_cache: dict[int, pygame.font.Font] = {}
+        self._capture_output_size: tuple[int, int] | None = None
         self._clock = pygame.time.Clock()
         self._time = 0.0
         self._environment_atlas = self._load_environment_atlas()
@@ -464,7 +469,7 @@ class GhostlineRenderer:
         self.color_safe = bool(settings.get("color_safe", False))
         self.reduced_motion = bool(settings.get("reduced_motion", False))
         self.reduced_flashes = bool(settings.get("reduced_flashes", True))
-        self.sound_captions_enabled = bool(settings.get("sound_captions", True))
+        self.sound_captions_enabled = bool(settings.get("sound_captions", False))
         self.hud_scale = min((1.0, 1.25, 1.5), key=lambda value: abs(value - float(settings.get("hud_scale", 1.0))))
         self.timer_warnings = bool(settings.get("timer_warnings", True))
         self.tutorial_hints = bool(settings.get("tutorial_hints", True))
@@ -567,6 +572,7 @@ class GhostlineRenderer:
         self,
         *,
         return_array: bool = False,
+        output_size: tuple[int, int] | None = None,
         lab_stats: dict[str, Any] | None = None,
         touch_controls: dict[str, Any] | None = None,
         compact_hud: bool = False,
@@ -578,6 +584,7 @@ class GhostlineRenderer:
         self._update_presentation_state(dt)
         self._ensure_level_cache()
         self._update_security_memory()
+        self._capture_output_size = output_size if return_array else None
         self._native_text_commands.clear()
         self.logical.fill(BG)
         self._draw_floor()
@@ -599,7 +606,7 @@ class GhostlineRenderer:
         if touch_controls:
             self._draw_touch_controls(touch_controls)
         self._apply_accessibility_filter()
-        return self._present(return_array=return_array)
+        return self._present(return_array=return_array, output_size=output_size)
 
     def draw_screen(
         self,
@@ -615,8 +622,10 @@ class GhostlineRenderer:
         compact: bool = False,
         compact_body: bool = False,
         return_array: bool = False,
+        output_size: tuple[int, int] | None = None,
     ) -> np.ndarray | bool:
         self._time += self._clock.tick(60) / 1000.0
+        self._capture_output_size = output_size if return_array else None
         self._native_text_commands.clear()
         self.logical.fill(BG)
         self._draw_menu_backdrop(title)
@@ -643,31 +652,25 @@ class GhostlineRenderer:
             for index, item in enumerate(items):
                 active = index == selected
                 item_rect = self.menu_item_rect(index, compact=compact)
+                pygame.draw.rect(self.logical, CYAN if active else (8, 8, 8), item_rect, border_radius=4)
                 pygame.draw.rect(
                     self.logical,
-                    (12, 27, 32) if active else (7, 16, 22),
-                    item_rect,
-                    border_radius=3,
-                )
-                pygame.draw.rect(
-                    self.logical,
-                    CYAN if active else (31, 55, 61),
+                    CYAN if active else (52, 58, 66),
                     item_rect,
                     1,
-                    border_radius=3,
+                    border_radius=4,
                 )
                 if active:
-                    pygame.draw.rect(self.logical, CYAN, (item_rect.x, item_rect.y, 3, item_rect.height))
                     pygame.draw.polygon(
                         self.logical,
-                        CYAN,
+                        BG,
                         (
                             (item_rect.x + 14, item_rect.centery),
                             (item_rect.x + 9, item_rect.centery - 4),
                             (item_rect.x + 9, item_rect.centery + 4),
                         ),
                     )
-                self._text(item, 59, y, self.font, CYAN if active else INK)
+                self._text(item, 59, y, self.font, BG if active else INK)
                 y += spacing
         if panel:
             panel_lines = [
@@ -680,8 +683,8 @@ class GhostlineRenderer:
             # the panel edge, and expand vertically only as far as that safe
             # area permits.
             panel_rect = pygame.Rect(372, 106, 238, min(218, 31 + len(panel_lines) * 14))
-            pygame.draw.rect(self.logical, (5, 12, 17), panel_rect, border_radius=4)
-            pygame.draw.rect(self.logical, (46, 91, 94), panel_rect, 1, border_radius=4)
+            pygame.draw.rect(self.logical, (8, 8, 8), panel_rect, border_radius=5)
+            pygame.draw.rect(self.logical, (61, 68, 78), panel_rect, 1, border_radius=5)
             pygame.draw.rect(self.logical, CYAN, (panel_rect.x, panel_rect.y, 3, panel_rect.height))
             self._text("LIVE DOSSIER", panel_rect.x + 14, panel_rect.y + 10, self.font_small, CYAN)
             for index, line in enumerate(panel_lines):
@@ -689,7 +692,7 @@ class GhostlineRenderer:
         if footer:
             self._text(footer, 42, 332, self.font_small, MUTED)
         self._apply_accessibility_filter()
-        return self._present(return_array=return_array)
+        return self._present(return_array=return_array, output_size=output_size)
 
     @staticmethod
     def menu_item_rect(index: int, *, compact: bool = False) -> pygame.Rect:
@@ -721,9 +724,22 @@ class GhostlineRenderer:
                 return index
         return None
 
-    def _present(self, *, return_array: bool) -> np.ndarray | bool:
+    def _present(
+        self,
+        *,
+        return_array: bool,
+        output_size: tuple[int, int] | None = None,
+    ) -> np.ndarray | bool:
         if return_array:
-            return np.transpose(pygame.surfarray.array3d(self.logical), (1, 0, 2)).copy()
+            capture_size = output_size or LOGICAL_SIZE
+            if capture_size != LOGICAL_SIZE or self._native_text_commands:
+                capture = pygame.transform.scale(self.logical, capture_size)
+                self._draw_native_text(capture, capture_size)
+            else:
+                capture = self.logical
+            frame = np.transpose(pygame.surfarray.array3d(capture), (1, 0, 2)).copy()
+            self._capture_output_size = None
+            return frame
         target_size = self.window.get_size()
         scaled_size = _presentation_scaled_size(target_size)
         scaled = pygame.transform.scale(self.logical, scaled_size)
@@ -732,6 +748,7 @@ class GhostlineRenderer:
         destination = ((target_size[0] - scaled_size[0]) // 2, (target_size[1] - scaled_size[1]) // 2)
         self.window.blit(scaled, destination)
         pygame.display.flip()
+        self._capture_output_size = None
         return True
 
     def _update_camera(self, dt: float) -> None:
@@ -1273,13 +1290,10 @@ class GhostlineRenderer:
                 confirmed=guard.mode == GuardMode.CHASE,
                 suspicious=guard.mode in (GuardMode.SUSPICIOUS, GuardMode.INVESTIGATE, GuardMode.SEARCH),
             )
-            if guard.mode not in (GuardMode.PATROL, GuardMode.RETURN):
-                cause = {"eye": "EYE", "sound": "SOUND", "radio": "RADIO"}.get(guard.stimulus, "CHECK")
-                cause_color = RED if guard.stimulus == "eye" else (CYAN if guard.stimulus == "sound" else VIOLET)
-                width = self.font_small.size(cause)[0] + 6
-                cause_y = sy - 47 if sy - 47 >= 116 else sy + 26
-                pygame.draw.rect(self.logical, (4, 8, 12), (sx - width // 2, cause_y, width, 10), border_radius=2)
-                self._text(cause, sx - width // 2 + 3, cause_y + 1, self.font_small, cause_color)
+            # Awareness shape, meter colour, sightlines, and the central
+            # detection status already communicate why pressure changed.
+            # Repeating EYE/SOUND/RADIO text above every guard obscured nearby
+            # actors precisely when the player needed to read the room.
         for drone in self.sim.drones:
             if not self._visible_from_player(drone.position):
                 continue
@@ -1778,7 +1792,11 @@ class GhostlineRenderer:
             278.0 / max(abs(float(direction[0])), 0.001),
             123.0 / max(abs(float(direction[1])), 0.001),
         )
-        x, y = int(edge[0]), int(edge[1])
+        # Keep navigation callouts out of the fixed HUD, detection lane, room
+        # title, and bottom tutorial lane. The bearing remains directional but
+        # no longer prints objective text through critical status messages.
+        x = int(np.clip(edge[0], 34, LOGICAL_SIZE[0] - 34))
+        y = int(np.clip(edge[1], 124, LOGICAL_SIZE[1] - 60))
         pygame.draw.polygon(self.logical, color, ((x, y - 6), (x + 6, y), (x, y + 6), (x - 6, y)), 2)
         distance_m = norm(delta) / TILE_SIZE
         self._text(f"{label} {distance_m:.0f}m", x - 24, y + 9, self.font_small, color)
@@ -1923,23 +1941,29 @@ class GhostlineRenderer:
             self._text(hint, 320 - width // 2 + 8, 331, self.font_small, CYAN if self.sim.quota_met else (190, 208, 207))
         self._draw_minimap()
         if lab_stats:
-            # Live inference should be observable without becoming a second
-            # HUD. The former 230x104 panel covered the lower-left route and
-            # terminals; this compact card uses under four percent of the
-            # playfield and keeps full run details for the debrief/web shell.
-            panel = pygame.Surface((218, 44), pygame.SRCALPHA)
-            panel.fill((5, 10, 14, 208))
-            self.logical.blit(panel, (10, 70))
-            pygame.draw.rect(self.logical, VIOLET, (10, 70, 3, 44))
+            # Agent telemetry belongs with the minimap, not over the route.
+            # Full recurrent-state details remain available in the web shell
+            # and debrief; gameplay gets one compact status tile.
+            panel_x, panel_y, panel_width, panel_height = 529, 69, 100, 34
+            panel = pygame.Surface((panel_width, panel_height), pygame.SRCALPHA)
+            panel.fill((5, 5, 5, 224))
+            self.logical.blit(panel, (panel_x, panel_y))
+            pygame.draw.rect(self.logical, VIOLET, (panel_x, panel_y, 3, panel_height))
+            pygame.draw.rect(self.logical, (61, 68, 78), (panel_x, panel_y, panel_width, panel_height), 1, border_radius=2)
             policy_name = str(lab_stats.get("policy", "SCRIPTED BASELINE"))
-            if len(policy_name) > 23:
-                policy_name = policy_name.replace(" POLICY", "")[:23]
-            self._text(f"AGENT // {policy_name}", 19, 76, self.font_small, VIOLET)
+            if "ONNX" in policy_name:
+                policy_name = "ONNX"
+            elif "GRU" in policy_name:
+                policy_name = "GRU"
+            elif "SCRIPTED" in policy_name:
+                policy_name = "SCRIPTED"
+            else:
+                policy_name = policy_name.replace("RECURRENT ", "").replace(" POLICY", "")[:8]
+            self._text(f"AGENT  {policy_name}", panel_x + 8, panel_y + 5, self.font_small, VIOLET)
             action_text = str(lab_stats.get("action", "HOLD"))
             latency = float(lab_stats.get("latency_ms", 0.0))
-            phase = "EXTRACT" if self.sim.quota_met else "ACQUIRE DATA"
-            self._text(f"{action_text:<11} {latency:4.1f}ms", 19, 91, self.font_small, CYAN)
-            self._text(f"{phase}  T{self.sim.trace:02.0f}", 19, 103, self.font_small, GREEN if self.sim.quota_met else AMBER)
+            action_text = action_text.replace(" +", "+")[:8]
+            self._text(f"{action_text:<8} {latency:3.1f}MS", panel_x + 8, panel_y + 19, self.font_small, CYAN)
 
     def _draw_touch_hud(self, hud_small: pygame.font.Font, hud_font: pygame.font.Font) -> None:
         """Render one calm, phone-readable status band.
@@ -2160,7 +2184,7 @@ class GhostlineRenderer:
 
     def _text(self, text: str, x: float, y: float, font: pygame.font.Font, color: tuple[int, int, int]) -> None:
         value = str(text)
-        if self.visible:
+        if self.visible or self._capture_output_size is not None:
             design_size = self._font_design_sizes.get(id(font), max(7, font.get_height() - 2))
             self._native_text_commands.append(NativeTextCommand(value, x, y, design_size, color))
             return

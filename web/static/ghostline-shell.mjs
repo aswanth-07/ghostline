@@ -94,8 +94,8 @@ function setBootState(state, message = "") {
     overlay.hidden = true;
     $("canvas")?.focus();
   } else {
-    title.textContent = "CONNECTING TO GHOSTLINE";
-    copy.textContent = message || "Preparing the secure facility simulation…";
+    title.innerHTML = "PLAY THE CONTRACT.<br><em>OR WATCH THE POLICY.</em>";
+    copy.textContent = message || "Preparing the deterministic game and recurrent policy runtime.";
     button.hidden = true;
     overlay.hidden = false;
   }
@@ -318,7 +318,10 @@ $("intel-panel-control")?.addEventListener("click", () => {
 });
 $("mobile-lab-close")?.addEventListener("click", () => setIntelPanel(false, { focus: true }));
 $("focus-game")?.addEventListener("click", () => {
-  if (gameReady) setBootState("running");
+  if (gameReady) {
+    setIntelPanel(false, { focus: true, closeTarget: "canvas" });
+    setBootState("running");
+  }
   else setBootState("booting", "Loading the facility and browser runtime…");
   queue("focus");
   if (

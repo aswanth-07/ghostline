@@ -259,6 +259,19 @@ def test_renderer_accessibility_modes_and_captions_are_headless_safe(monkeypatch
     assert renderer.sound_captions_enabled is True
 
 
+def test_sound_captions_are_opt_in_to_keep_the_default_hud_uncluttered(monkeypatch) -> None:
+    monkeypatch.setenv("SDL_VIDEODRIVER", "dummy")
+    monkeypatch.setenv("SDL_AUDIODRIVER", "dummy")
+
+    from ghostline.presentation import GhostlineRenderer
+    from ghostline.progression import DEFAULT_SETTINGS
+
+    renderer = GhostlineRenderer(GhostlineSimulation(seed=42, tier=3), visible=False)
+    assert renderer.sound_captions_enabled is False
+    assert DEFAULT_SETTINGS["accessibility"]["sound_captions"] is False
+    renderer.close()
+
+
 def test_pointer_selects_the_clicked_contract_instead_of_only_hovering(monkeypatch) -> None:
     monkeypatch.setenv("SDL_VIDEODRIVER", "dummy")
     monkeypatch.setenv("SDL_AUDIODRIVER", "dummy")
@@ -686,7 +699,7 @@ def test_visible_renderer_redraws_all_text_at_native_output_resolution(monkeypat
     renderer.close()
 
 
-def test_live_agent_card_uses_only_a_compact_upper_left_safe_area(monkeypatch) -> None:
+def test_live_agent_card_nests_below_the_minimap_instead_of_covering_the_route(monkeypatch) -> None:
     monkeypatch.setenv("SDL_VIDEODRIVER", "dummy")
     monkeypatch.setenv("SDL_AUDIODRIVER", "dummy")
 
@@ -707,10 +720,30 @@ def test_live_agent_card_uses_only_a_compact_upper_left_safe_area(monkeypatch) -
     changed = np.any(live != baseline, axis=2)
     xs, ys = np.where(changed)
 
-    assert xs.min() >= 10 and xs.max() <= 227
-    assert ys.min() >= 70 and ys.max() <= 113
-    assert int(changed.sum()) <= 218 * 44
-    assert changed.mean() < 0.05
+    assert xs.min() >= 529 and xs.max() <= 628
+    assert ys.min() >= 69 and ys.max() <= 102
+    assert int(changed.sum()) <= 100 * 34
+    assert changed.mean() < 0.02
+    renderer.close()
+
+
+def test_headless_capture_rasterizes_hud_text_at_native_720p(monkeypatch) -> None:
+    monkeypatch.setenv("SDL_VIDEODRIVER", "dummy")
+    monkeypatch.setenv("SDL_AUDIODRIVER", "dummy")
+
+    from ghostline.presentation import GhostlineRenderer
+
+    renderer = GhostlineRenderer(GhostlineSimulation(seed=7, tier=1), visible=False)
+    frame = renderer.draw_screen(
+        title="GHOSTLINE",
+        subtitle="NATIVE CAPTURE",
+        items=["PLAY CONTRACTS"],
+        return_array=True,
+        output_size=(1280, 720),
+    )
+
+    assert frame.shape == (720, 1280, 3)
+    assert 92 in renderer._native_font_cache
     renderer.close()
 
 

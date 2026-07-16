@@ -840,6 +840,8 @@ def test_web_shell_has_phone_readability_gate_and_collapsible_intel_panel() -> N
     assert 'id="mobile-lab-close"' in template
     assert "setIntelPanel" in shell
     assert 'classList.toggle("lab-panel-collapsed"' in shell
+    focus_handler = shell.split('$("focus-game")?.addEventListener("click"', 1)[1].split('$("game-frame")?.addEventListener', 1)[0]
+    assert "setIntelPanel(false" in focus_handler
     assert 'classList.toggle("mobile-lab-open"' in shell
     assert "(pointer: coarse) and (orientation: portrait)" in css
     assert "(pointer: coarse) and (orientation: landscape)" in css

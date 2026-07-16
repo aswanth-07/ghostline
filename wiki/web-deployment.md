@@ -102,6 +102,11 @@ centered image. Desktop builds retain crisp integer-only scaling.
 The standalone shell also exposes an `INTEL PANEL` toggle. Wide-screen users
 can collapse the full launcher/telemetry column and give the 16:9 playfield the
 workspace; live telemetry and matched-run analysis remain opt-in disclosures.
+Entering a contract now collapses that rail automatically, expanding the game
+from the setup layout while leaving `SHOW INTEL` available for tier, seed, and
+matched-run analysis. The launcher uses the portfolio's neutral-black surfaces,
+58 px grid, cyan/magenta interaction tokens, and self-hosted Manrope/JetBrains
+Mono Latin variable fonts; their SIL OFL 1.1 texts ship with the static bundle.
 The toggle carries `aria-controls`/`aria-expanded`, restores focus on close,
 and leaves the deterministic simulation and model interface untouched. Rapid
 5 Hz raw telemetry is deliberately not an `aria-live` region; controller and

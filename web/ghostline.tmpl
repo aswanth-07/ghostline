@@ -18,9 +18,9 @@ async def custom_site():
 
     while str(platform.window.eval("typeof globalThis.ghostlineShell")) == "undefined":
         await asyncio.sleep(0.01)
-    platform.document.body.style.background = "#03060c"
+    platform.document.body.style.background = "#000000"
     platform.window.canvas.style.visibility = "visible"
-    platform.window.ghostlineShell.setBootState("booting", "Mounting the deterministic simulation…")
+    platform.window.ghostlineShell.setBootState("booting", "Mounting the deterministic simulation...")
 
     bundle = "{{cookiecutter.archive}}"
     appdir = Path(f"/data/data/{bundle}")
@@ -71,7 +71,7 @@ asyncio.run(custom_site())
   <meta charset="UTF-8">
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#03060c">
+  <meta name="theme-color" content="#000000">
   <meta name="description" content="Play Ghostline, a procedural stealth-infiltration game, or watch a recurrent RL policy take control.">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
@@ -114,13 +114,14 @@ asyncio.run(custom_site())
     </div>
   </div>
   <header class="site-header">
-    <div class="brand">
-      <div class="brand-mark" aria-hidden="true"></div>
-      <div class="brand-copy"><strong>GHOSTLINE</strong><span>PROCEDURAL STEALTH // LIVE POLICY LAB</span></div>
-    </div>
+    <a class="brand" href="https://aaswanthraj.vercel.app/projects/ghostline" target="_blank" rel="noopener" aria-label="Open the Ghostline engineering case study">
+      <div class="brand-mark" aria-hidden="true">GL</div>
+      <div class="brand-copy"><strong>GHOSTLINE</strong><span>A ASWANTH RAJ / INTERACTIVE ML PROJECT</span></div>
+    </a>
     <div class="header-status" aria-live="polite">
       <span id="control-chip" class="chip">HUMAN CONTROL</span>
       <span id="policy-chip" class="chip" data-state="idle">CHECKING AGENT</span>
+      <a class="portfolio-link" href="https://aaswanthraj.vercel.app/projects/ghostline" target="_blank" rel="noopener">CASE STUDY <span aria-hidden="true">↗</span></a>
     </div>
   </header>
 
@@ -132,11 +133,11 @@ asyncio.run(custom_site())
 
         <div id="launch-gate" class="launch-gate" role="dialog" aria-modal="true" aria-labelledby="launch-title">
           <div class="launch-card">
-            <span class="launch-kicker">SECURE CHANNEL // WEBASSEMBLY</span>
-            <h1 id="launch-title">CONNECTING TO GHOSTLINE</h1>
-            <p id="launch-copy">Preparing the secure facility simulation…</p>
+            <span class="launch-kicker">LIVE CONTRACT / PLAYER-EQUIVALENT POLICY</span>
+            <h1 id="launch-title">PLAY THE CONTRACT.<br><em>OR WATCH THE POLICY.</em></h1>
+            <p id="launch-copy">A deterministic procedural stealth game and recurrent agent running together in your browser.</p>
             <div id="transfer">
-              <div id="status">Downloading browser runtime…</div>
+              <div id="status">Downloading browser runtime...</div>
               <progress value="0" max="100" id="progress"></progress>
             </div>
             <button id="focus-game" class="primary" type="button" hidden>ENTER FACILITY</button>
@@ -152,7 +153,7 @@ asyncio.run(custom_site())
         <button id="human-control" class="primary" type="button" hidden>TAKE CONTROL</button>
         <button id="agent-control" class="agent" type="button">AGENT TAKEOVER</button>
       </div>
-      <p class="web-help"><kbd>WASD</kbd> move · <kbd>SHIFT</kbd> dash · <kbd>SPACE</kbd> pulse · <kbd>ESC</kbd> pause. Touch devices get an on-screen stick, dash, pulse, and pause controls.</p>
+      <p class="web-help"><kbd>WASD</kbd> move <span>·</span> <kbd>SHIFT</kbd> dash <span>·</span> <kbd>SPACE</kbd> pulse <span>·</span> <kbd>ESC</kbd> pause. Touch devices get an on-screen stick, dash, pulse, and pause controls.</p>
     </section>
 
     <aside id="agent-lab-panel" class="side-panel" aria-label="Live Agent Lab controls">
@@ -213,7 +214,7 @@ asyncio.run(custom_site())
   </footer>
 
   <div id="notice" role="status" hidden></div>
-  <div id="infobox" hidden>Loading…</div>
+  <div id="infobox" hidden>Loading...</div>
   <div id="html" hidden></div>
   <div id="crt" hidden><div id="system" hidden></div><div id="box" hidden><div id="info"></div><iframe id="iframe" name="iframe" hidden></iframe></div></div>
   <div id="dlg" hidden><input type="file" id="dlg_multifile" multiple></div>
@@ -229,11 +230,11 @@ asyncio.run(custom_site())
       info.hidden = true;
       box.hidden = true;
       transfer.hidden = false;
-      globalThis.ghostlineShell?.setBootState("booting", "Loading the WebAssembly runtime…");
+      globalThis.ghostlineShell?.setBootState("booting", "Loading the WebAssembly runtime...");
     }
 
     function custom_prerun() {
-      globalThis.ghostlineShell?.setBootState("booting", "Preparing the Python filesystem…");
+      globalThis.ghostlineShell?.setBootState("booting", "Preparing the Python filesystem...");
     }
 
     function custom_postrun() {}
