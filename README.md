@@ -83,10 +83,31 @@ Controls:
 - `WASD`: move
 - `Shift`: energy-limited noisy dash
 - `Space`: limited disruption pulse
+- `Q`: acoustic decoy in Adaptive Contracts
 - `R`: retry the current seed
 - `Esc`: pause or go back
 
 Enter an amber terminal ring to link data. Movement inside the ring does not interrupt linking; leaving pauses progress and returning resumes it. After meeting quota, reach the green extraction relay.
+
+### Optional Adaptive Contracts research track
+
+Classic play, Agent Lab, and the published 89.6% tier-six runner remain frozen
+to `GhostlineEnv-v2`. The additive Env-v3 track can be selected from the main
+menu or launched directly:
+
+```powershell
+ghostline play --adaptive --tier 6 --directive ghost
+```
+
+Adaptive Contracts add Standard, Ghost, Speed, and Greed directives; a limited
+acoustic decoy; coordinated operative roles; discrete jam-aware radio; fair
+temporary locks on graph-redundant doors; and telegraphed nonlethal suppressor
+rounds on tiers 5-6. A shared security policy is used when a compatible
+`models/ghostline-security.pt` exists. Otherwise the game uses a deterministic
+tactical fallback built from the same local observations and action masks.
+The bundled recurrent security policy batches the full operative team into one
+actor call at each 5 Hz tactical decision. Its measured held-out result is
+reported below; it does not alter the frozen Env-v2 runner evidence above.
 
 ## Agent Lab and public environment
 
@@ -104,6 +125,14 @@ observation, info = env.reset(seed=42)
 
 The action space represents `9 movement × 2 dash × 2 pulse` combinations. Observations contain ego state, an explicit player-equivalent objective vector, an egocentric local grid, known targets, shared live/last-seen/quantized-audio security intel, 24 directional rays, confidence masks, and an action mask. The 13-feature entity record includes explicit guard grade; no hidden live coordinate is exposed. Acquire objectives use stable terminal hysteresis and a visible six-tile navigation look-ahead, so the HUD, fair teacher, and neural policy receive the same non-oscillating route signal. `GhostlineEnv-v1` remains registered only as the documented compatibility baseline.
 
+`GhostlineEnv-v3` is a clean additive contract with `Discrete(72)` =
+`9 movement x 2 dash x 2 pulse x 2 decoy`, directive state, locked-door/decoy/
+projectile grid channels, operative role and aim fields, and projectile danger
+rays. The cooperative security benchmark is exposed by
+`ghostline.security_env.parallel_env()` as `GhostlineSecurityParallel-v0`.
+Each operative acts on local, perception-gated inputs while a 64-value global
+state is available only to the centralized training critic.
+
 ## Training and evaluation
 
 Ghostline uses Python 3.13, Gymnasium 1.3, NumPy 2.5, and PyTorch 2.13 CUDA 13.0. Behavior cloning, DAgger, RND, recurrent PPO/GAE, checkpoint selection, and resume state are implemented directly in PyTorch without an additional RL framework dependency. Training dependencies are isolated from both the base player and the lightweight ONNX agent runtime.
@@ -117,6 +146,35 @@ ghostline export --model models/ghostline-policy.pt --output models/ghostline-po
 Copy-Item models/ghostline-policy.fp32.parity.json benchmarks/neural/champion-onnx-parity.json
 python scripts/build_web.py --model models/ghostline-policy.onnx
 ```
+
+Adaptive-security MAPPO uses disjoint 10M training, 11M validation, and one-way
+12M+ final-test slices plus a separate fail-closed checkpoint fingerprint:
+
+```powershell
+python -m pip install --constraint requirements.lock -e ".[marl]"
+ghostline train-security --hours 72 --envs 8 --tiers 3,4,5,6 --runner-model models/ghostline-policy.pt --bc-warmup-steps 10000
+ghostline train-security --init-model artifacts/security-bc/champion.pt --bc-warmup-steps 0 --no-resume --hours 72
+ghostline evaluate-security --model artifacts/security-mappo/champion.pt --episodes-per-tier 100
+```
+
+The CPU and CUDA paths are implemented and tested. Training defaults to
+the frozen published Env-v2 runner as its provenance-bound opponent; pass
+`--scripted-runner` only for the explicit easier baseline. Validation selection
+uses worst-tier security stop rate, then tier-six stop rate, mean all-tier stop
+rate, damage, detections, and delay. Evaluation writes JSON,
+aggregate CSV, and per-episode CSV with 95%
+Wilson intervals. An entropy-regularized observation-only tactical warm-up and
+discount-matched, component-accounted team shaping prevent the sparse terminal
+objective from degenerating into idle behavior. Validation then directs 70% of
+new episodes to the weakest tier while preserving 30% all-tier replay; pass
+`--uniform-curriculum` only for the explicit ablation. The selected mixed-opponent
+policy was chosen from two disjoint validation windows and then achieved `4/0/8/16%` tier 3-6
+containment on the untouched 13M final slice (25 contracts per tier). This is a
+measured optional-adversary result, not a solved-tier claim; tier 4 remains at
+zero stops. Lightweight player/web builds retain the tactical fallback when the
+PyTorch security runtime is unavailable.
+The evidence protocol is documented in
+[`benchmarks/security/README.md`](benchmarks/security/README.md).
 
 Export always preserves the canonical FP32 graph. With `--quantize`, it also writes a dynamic-INT8 candidate and independently replays both recurrent graphs against PyTorch. `--deployment-output` receives INT8 only after zero deterministic-action mismatches; otherwise it receives the verified FP32 fallback. The sibling `.parity.json` audit records byte sizes, SHA-256 hashes, recurrent width, observation contract, transition count, per-artifact parity, size reduction, and the selected deployment precision.
 
@@ -159,6 +217,7 @@ python -m pytest -q
 python scripts/fuzz_ghostline_levels.py --seeds 10000
 python scripts/benchmark_ghostline.py --decisions 10000 --tier 6 --workers 22 --minimum-decisions-per-second 3000 --output benchmarks/system/headless-throughput.json
 python scripts/verify_release_evidence.py
+python scripts/verify_security_release_evidence.py
 python -m build
 python scripts/verify_source_archive.py
 python scripts/verify_clean_install.py
@@ -176,7 +235,7 @@ for the exact packaged bytes and source-checkpoint SHA-256.
 build inspection. CI also launches the packaged executable with a headless
 simulation-and-policy smoke test before publishing the artifact.
 
-`verify_release_evidence.py` is the read-only release authority. It independently
+`verify_release_evidence.py` is the read-only runner release authority. It independently
 checks the 3,000 canonical final episodes and Wilson intervals, the consumed 8M
 slice and all three output hashes, the exact checkpoint/ONNX/parity chain, the
 tracked tier-6 throughput run, and `videos/ghostline-demo.mp4`. It cannot run or
@@ -188,6 +247,11 @@ only then does the workflow create a GitHub Release containing both bundles,
 the wheel, source archive, checkpoint, deployment ONNX, model card, final
 JSON/CSV evidence, parity/throughput audits, and demo video. Manual workflow
 dispatch performs the same gates and builds but never publishes a release.
+
+`verify_security_release_evidence.py` separately binds the bundled security
+checkpoint to its two validation slices, failed 12M candidate, untouched 13M
+final slice, frozen runner opponent, aggregate metrics, Wilson intervals, and
+CSV copies.
 
 The original 5,000 decisions/s simulator target is not claimed by the current
 live-telemetry build. The tracked WSL2 run reaches 3,194 aggregate decisions/s
