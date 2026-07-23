@@ -1,10 +1,13 @@
 ---
 title: Ghostline Project Log
-updated: 2026-07-14
+updated: 2026-07-23
 status: active
 ---
 
 # Superhuman-agent and web-showcase pass
+
+- Added the optional Env-v3 Adaptive Contracts research track without changing Env-v2 or its frozen evidence. Human play now exposes Standard/Ghost/Speed/Greed directives, acoustic decoys, graph-safe telegraphed security locks, discrete jam-aware radio, role-specific coordinated operatives, and telegraphed suppressor projectiles. `GhostlineSecurityParallel-v0` passes the PettingZoo parallel API; a parameter-shared recurrent actor, CTDE critic, recurrent MAPPO trainer, held-out evaluator, desktop/web launcher controls, and CPU optimizer smoke are implemented. The game deliberately labels the deterministic tactical fallback and makes no learned-security claim before the pending CUDA campaign.
+- Bound security training and evaluation to the frozen Env-v2 champion hash by default, unified desktop and benchmark tactical fallbacks, added Wilson/CSV evidence, fail-closed resume identity, deterministic waypoint projection, cached shared spatial planes, a 10,000-seed adaptive audit, policy-enabled Pygbag staging, and a real CUDA checkpoint calibration. The 22-worker classic headless gate passed at 4,022 decisions/s; no held-out learned-security claim has been made.
 
 - Tightened the phone presentation after device review: coarse/small browser viewports now use high-quality compositor downscaling for the 1280x720 framebuffer instead of forcing nearest-neighbour CSS reduction, and touch play replaces the separate status/clock/minimap islands with one compact decision band. The desktop pixel-art path and deterministic simulation remain unchanged.
 - Removed the connection-time audio buzz at its source: the two infinite procedural score buffers no longer start at browser handshake, the 46/55 Hz continuous drone was replaced with a quieter breathing score with baked headroom, and WebAssembly uses a larger underrun-resistant mixer buffer. Audio now owns reserved score channels plus tracked SFX channels, reconnect/reinitialization retires the old owner without stacking loops, and shutdown no longer stops the global mixer.
