@@ -31,6 +31,9 @@ the evidence chain that backs the result.
 
 - `GhostlineEnv-v1`, a Gymnasium environment with `Discrete(36)` and a
   structured player-equivalent observation.
+- The install surface contains only the finished single-agent game, training
+  and deployment dependencies; the separate research track does not leak into
+  this release through an optional extra or transitive package.
 - Frozen mechanics bound to environment fingerprint `521c449a…e129`; loading a
   checkpoint against a different fingerprint fails closed.
 - `verify_release_evidence.py` recomputes every published aggregate from the raw

@@ -220,6 +220,7 @@ def test_windows_command_bundles_policy_and_excludes_training_stack(tmp_path: Pa
     joined = " ".join(command)
     assert str(root / "src" / "ghostline" / "player_entry.py") == command[-1]
     assert "ghostline/__main__.py" not in joined.replace("\\", "/")
+    assert "ghostline.env_v1" in command
     assert "ghostline.inference" in command
     assert "--collect-all onnxruntime" not in joined
     assert f"{policy}{os.pathsep}models" in command
@@ -427,8 +428,11 @@ def test_public_cli_and_extras_match_release_contract() -> None:
     assert project["tool"]["setuptools"]["packages"]["find"]["include"] == ["ghostline*"]
     assert project["tool"]["pytest"]["ini_options"]["pythonpath"] == ["src"]
     assert project["project"]["optional-dependencies"]["agent"] == ["onnxruntime==1.27.0"]
+    assert "marl" not in project["project"]["optional-dependencies"]
     assert "onnx==1.22.0" in project["project"]["optional-dependencies"]["dev"]
     assert "onnxruntime==1.27.0" in project["project"]["optional-dependencies"]["dev"]
+    assert "pettingzoo" not in (ROOT / "pyproject.toml").read_text(encoding="utf-8").lower()
+    assert "pettingzoo" not in (ROOT / "requirements.lock").read_text(encoding="utf-8").lower()
     assert "torch==2.13.0" not in project["project"]["optional-dependencies"]["build"]
     assert "onnxruntime==1.27.0" in project["project"]["optional-dependencies"]["build"]
     assert project["project"]["license"] == "MIT"

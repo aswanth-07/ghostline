@@ -150,6 +150,10 @@ def windows_build_command(
         "Ghostline",
         "--paths",
         str(root / "src"),
+        # ``ghostline.__init__`` imports the published wrapper dynamically so
+        # PyInstaller cannot discover it through static analysis.
+        "--hidden-import",
+        "ghostline.env_v1",
     ]
     for source, destination in _release_assets(root):
         command.extend(("--add-data", _data_argument(source, destination)))

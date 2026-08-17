@@ -76,8 +76,6 @@ packaging==26.2
     #   pytest
     #   tensorboard
     #   wheel
-pettingzoo==1.26.1
-    # via ghostline (pyproject.toml)
 pefile==2024.8.26
     # via pyinstaller
 pillow==12.3.0
