@@ -24,15 +24,13 @@ let policyAvailability = null;
 
 const $ = (id) => document.getElementById(id);
 const tier = () => Number($("tier-select")?.value || 1);
-const contractMode = () => $("mode-select")?.value === "adaptive" ? "adaptive" : "classic";
-const directive = () => $("directive-select")?.value || "standard";
 const seed = () => {
   const raw = $("seed-input")?.value?.trim();
   return raw ? Math.max(0, Math.min(2147483647, Number(raw) || 0)) : null;
 };
 
 function queue(type, extra = {}) {
-  commands.push({ type, tier: tier(), seed: seed(), contractMode: contractMode(), directive: directive(), ...extra });
+  commands.push({ type, tier: tier(), seed: seed(), ...extra });
 }
 
 function formatMetric(value, suffix = "") {
@@ -204,9 +202,7 @@ function updateMetrics(serialized) {
   $("live-time").textContent = `${Number(metrics.time).toFixed(1)}s`;
   $("live-trace").textContent = `${Number(metrics.trace).toFixed(0)}%`;
   $("live-damage").textContent = formatMetric(metrics.damage);
-  $("live-contract").textContent = metrics.contract === "GhostlineEnv-v2"
-    ? `MULTI-AGENT v2 // ${String(metrics.directive || "standard").toUpperCase()}`
-    : "PUBLISHED // ENV-v1";
+  $("live-contract").textContent = "PUBLISHED // ENV-v1";
   if (lastStatus === "active" && metrics.status !== "active") {
     embedBridge.publishRunComplete(metrics);
     // Pin the completed contract into the launcher so the other controller's
@@ -241,10 +237,6 @@ async function requestAgentControl({ fresh = false } = {}) {
   // recurrent policy, not roll directly into its known procedural failure
   // tail. Live mid-contract handoffs still preserve the active human seed.
   const activeContract = currentMetrics?.status === "active" && Number(currentMetrics?.time || 0) > 0;
-  if (activeContract && currentMetrics?.contract === "GhostlineEnv-v2") {
-    showNotice("The published runner policy uses the frozen single-agent v1 contract. Finish this v2 run or launch the published game before takeover.", "info");
-    return;
-  }
   if (!activeContract && seed() === null && $("seed-input")) {
     $("seed-input").value = String(agentShowcaseSeeds[tier()]);
   }
@@ -274,8 +266,6 @@ async function requestAgentControl({ fresh = false } = {}) {
 }
 
 async function replayPortfolioAgentRun() {
-  if ($("mode-select")) $("mode-select").value = "classic";
-  if ($("directive-select")) $("directive-select").value = "standard";
   if ($("tier-select")) $("tier-select").value = String(portfolioDemo.tier);
   if ($("seed-input")) $("seed-input").value = String(portfolioDemo.seed);
   showNotice("Loading the exact tier-six contract and checkpoint used by the portfolio recording.", "info");
@@ -331,11 +321,6 @@ $("play-selected")?.addEventListener("click", () => {
   queue("launch-human");
   setIntelPanel(false, { focus: true, closeTarget: "canvas" });
 });
-$("mode-select")?.addEventListener("change", () => {
-  const adaptive = contractMode() === "adaptive";
-  if ($("directive-select")) $("directive-select").disabled = !adaptive;
-});
-if ($("directive-select")) $("directive-select").disabled = contractMode() !== "adaptive";
 $("agent-control")?.addEventListener("click", () => { void requestAgentControl(); });
 $("portfolio-agent-control")?.addEventListener("click", () => { void replayPortfolioAgentRun(); });
 $("human-control")?.addEventListener("click", restoreHumanControl);

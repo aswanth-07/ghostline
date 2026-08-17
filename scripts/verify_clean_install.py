@@ -49,15 +49,25 @@ def verify(wheel: Path) -> dict[str, object]:
             assert util.find_spec("torch") is None
             assert util.find_spec("onnxruntime") is None
             assert util.find_spec("neon_arena") is None
-            retired_v3_modules = (
-                "ghostline.config_v3",
-                "ghostline.env_v3",
-                "ghostline.generation_v3",
-                "ghostline.model_v3",
-                "ghostline.simulation_v3",
-                "ghostline.types_v3",
+            # The multi-agent research track lives in its own repository. None
+            # of its modules may reappear in the published single-agent wheel.
+            multi_agent_modules = (
+                "ghostline.config_v2",
+                "ghostline.env_v2",
+                "ghostline.generation_v2",
+                "ghostline.model_v2",
+                "ghostline.simulation_v2",
+                "ghostline.types_v2",
+                "ghostline.security_env",
+                "ghostline.security_model",
+                "ghostline.security_controller",
+                "ghostline.security_baselines",
+                "ghostline.security_types",
+                "ghostline.marl_train",
+                "ghostline.runner_train_v2",
+                "ghostline.co_training",
             )
-            for module_name in retired_v3_modules:
+            for module_name in multi_agent_modules:
                 assert util.find_spec(module_name) is None, module_name
 
             import gymnasium as gym
@@ -68,14 +78,6 @@ def verify(wheel: Path) -> dict[str, object]:
             assert info["historical_internal_contract"] == "GhostlineEnv-v2"
             env.step(0)
             env.close()
-            adaptive = gym.make("GhostlineEnv-v2", tier=6, seed=10102, directive="ghost")
-            adaptive_observation, adaptive_info = adaptive.reset(seed=10102)
-            assert adaptive_observation["action_mask"].shape == (288,)
-            assert adaptive_observation["directive"].shape == (6,)
-            assert adaptive_observation["field_targets"].shape == (16, 13)
-            assert adaptive_info["contract"] == "GhostlineEnv-v2"
-            adaptive.step(0)
-            adaptive.close()
 
             from ghostline.resources import runtime_asset_path
             runtime_assets = (
@@ -89,8 +91,6 @@ def verify(wheel: Path) -> dict[str, object]:
             for relative in runtime_assets:
                 with runtime_asset_path(relative) as asset:
                     assert asset is not None and asset.is_file(), relative
-            with runtime_asset_path("models/ghostline-security.pt") as retired_security_policy:
-                assert retired_security_policy is None
             with runtime_asset_path("assets/licenses.json") as asset_manifest:
                 asset_data = json.loads(asset_manifest.read_text(encoding="utf-8"))
             assert asset_data["project"] == "Ghostline"
@@ -105,8 +105,6 @@ def verify(wheel: Path) -> dict[str, object]:
             os.environ.setdefault("SDL_AUDIODRIVER", "dummy")
             from ghostline.presentation import GhostlineRenderer
             from ghostline.simulation import GhostlineSimulation
-            from ghostline.security_controller import AdaptiveSecurityController
-            from ghostline.simulation_v2 import GhostlineSimulationV2
             renderer = GhostlineRenderer(GhostlineSimulation(seed=10101, tier=1), visible=False)
             assert not hasattr(renderer, "_key_art")
             assert renderer._environment_atlas is not None
@@ -115,13 +113,6 @@ def verify(wheel: Path) -> dict[str, object]:
             frame = renderer.draw(return_array=True)
             assert frame.shape == (360, 640, 3)
             renderer.close()
-            adaptive_sim = GhostlineSimulationV2(seed=10102, tier=6, external_security=True)
-            security = AdaptiveSecurityController(adaptive_sim)
-            assert security.policy is None
-            assert security.adapter is None  # PettingZoo is intentionally outside the base wheel.
-            security.update(force=True)
-            assert security.last_orders
-            security.close()
 
             scripts = {
                 item.name: item.value
@@ -131,14 +122,14 @@ def verify(wheel: Path) -> dict[str, object]:
             assert scripts == {"ghostline": "ghostline.cli:main"}
             print(json.dumps({
                 "ghostline_version": ghostline.__version__,
-                "environments": ["GhostlineEnv-v1", "GhostlineEnv-v2"],
+                "environments": ["GhostlineEnv-v1"],
                 "pygame_deferred_until_asset_probe": pygame_was_deferred,
                 "torch_available": util.find_spec("torch") is not None,
                 "onnxruntime_available": util.find_spec("onnxruntime") is not None,
                 "legacy_package_available": util.find_spec("neon_arena") is not None,
-                "retired_v3_modules_available": [
+                "multi_agent_modules_present": [
                     module_name
-                    for module_name in retired_v3_modules
+                    for module_name in multi_agent_modules
                     if util.find_spec(module_name) is not None
                 ],
                 "console_scripts": scripts,

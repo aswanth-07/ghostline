@@ -267,20 +267,9 @@ class GhostlineWebRuntime:
         seed = int(seed_value) if seed_value not in (None, "") else None
         if seed is not None:
             seed = max(0, min(2_147_483_647, seed))
-        adaptive = str(command.get("contractMode", "classic")) == "adaptive"
-        directive_name = str(command.get("directive", "standard")).lower()
-        if directive_name not in {"standard", "ghost", "speed", "greed"}:
-            directive_name = "standard"
-
         if kind == "launch-human":
             self.app.selected_tier = tier
             self.app.seed = seed
-            self.app.adaptive_mode = adaptive
-            directive_type = getattr(
-                __import__("ghostline.types_v2", fromlist=["ContractDirective"]),
-                "ContractDirective",
-            )
-            self.app.directive = directive_type.parse(directive_name)
             self.control_mode = "human"
             self.run_mode = "human"
             self.app._start_mission(agent=False)
@@ -320,23 +309,6 @@ class GhostlineWebRuntime:
             self.host.ghostlineShell.showNotice("The policy could not load. Continuing in human mode.", "error")
             return
 
-        active_sim = getattr(self.app, "sim", None)
-        adaptive_active = (
-            active_sim is not None
-            and hasattr(active_sim, "decoy_charges")
-            and self.app.state in {"play", "pause", "lab_play"}
-            and not active_sim.terminated
-            and not active_sim.truncated
-        )
-        if adaptive_active and not fresh:
-            self.host.ghostlineShell.setControlMode("human")
-            self.host.ghostlineShell.setPolicyState("ready", "Published v1 runner ready")
-            self.host.ghostlineShell.showNotice(
-                "Runner takeover uses the published single-agent v1 policy; the active multi-agent v2 contract remains under human control.",
-                "info",
-            )
-            return
-
         self.host.ghostlinePolicy.reset()
         self.policy.prefetched = False
         self.policy._prefetch_inference_count = -1
@@ -344,7 +316,6 @@ class GhostlineWebRuntime:
         self.app.learned_policy = self.policy
         self.app.selected_tier = tier
         self.app.seed = seed
-        self.app.adaptive_mode = False
         _install_browser_gymnasium_shim()
         active_mission = (
             not fresh
@@ -469,9 +440,7 @@ class GhostlineWebRuntime:
             "damage": int(sim.damage_taken),
             "detections": int(sim.detections),
             "distance": round(float(sim.distance_travelled), 1),
-            "contract": "GhostlineEnv-v2" if hasattr(sim, "decoy_charges") else "GhostlineEnv-v1",
-            "directive": getattr(getattr(sim, "directive", None), "name", "STANDARD").lower(),
-            "security_policy": getattr(getattr(self.app, "security_controller", None), "policy_name", None),
+            "contract": "GhostlineEnv-v1",
         }
         self.host.ghostlineShell.updateMetrics(json.dumps(payload, separators=(",", ":")))
 

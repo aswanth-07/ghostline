@@ -20,15 +20,22 @@ import pytest
 ROOT = Path(__file__).resolve().parents[1]
 
 TRAINING_PATH_MODULES = (
-    "ghostline.simulation_v2",
-    "ghostline.generation_v2",
-    "ghostline.env_v2",
-    "ghostline.security_env",
-    "ghostline.model_v2",
-    "ghostline.security_model",
-    "ghostline.runner_train_v2",
-    "ghostline.marl_train",
-    "ghostline.co_training",
+    "ghostline.simulation",
+    "ghostline.generation",
+    "ghostline.env",
+    "ghostline.env_v1",
+    "ghostline.policies",
+    "ghostline.model",
+    "ghostline.curriculum",
+    "ghostline.rnd",
+    "ghostline.training",
+    "ghostline.torchrl_train",
+    "ghostline.imitation",
+    "ghostline.evaluation",
+    "ghostline.ablation",
+    "ghostline.exporting",
+    "ghostline.onnx_contract",
+    "ghostline.inference",
 )
 
 PRESENTATION_MODULES = (
@@ -74,7 +81,7 @@ def test_presentation_still_imports_the_shared_simulation() -> None:
         [
             sys.executable,
             "-c",
-            "import ghostline.presentation, ghostline.simulation_v2; print('ok')",
+            "import ghostline.presentation, ghostline.simulation; print('ok')",
         ],
         capture_output=True,
         text=True,

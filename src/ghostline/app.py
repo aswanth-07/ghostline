@@ -16,14 +16,8 @@ from ghostline.config import TIERS
 from ghostline.policies import FairScriptedPolicy
 from ghostline.presentation import (
     GhostlineRenderer,
-    TOUCH_CROUCH_CENTER,
-    TOUCH_CROUCH_RADIUS,
     TOUCH_DASH_CENTER,
     TOUCH_DASH_RADIUS,
-    TOUCH_DECOY_CENTER,
-    TOUCH_DECOY_RADIUS,
-    TOUCH_INTERACT_CENTER,
-    TOUCH_INTERACT_RADIUS,
     TOUCH_JOYSTICK_CENTER,
     TOUCH_PAUSE_RECT,
     TOUCH_PULSE_CENTER,
@@ -39,9 +33,7 @@ from ghostline.progression import (
     save_settings,
 )
 from ghostline.simulation import GhostlineSimulation
-from ghostline.simulation_v2 import GhostlineSimulationV2
 from ghostline.types import Action
-from ghostline.types_v2 import RUNNER_ACTION_COUNT_V2, ContractDirective, RunnerActionV2
 
 BRIEFINGS = {
     1: ("Learn the line.", "Acquire the contract quota and leave through the green extraction relay."),
@@ -60,9 +52,6 @@ CONTROL_ACTIONS = (
     ("move_right", "MOVE RIGHT"),
     ("dash", "DASH"),
     ("pulse", "PULSE"),
-    ("decoy", "NOISE DECOY"),
-    ("crouch", "CROUCH / SNEAK"),
-    ("interact", "INTERACT / HACK"),
     ("restart", "RESTART"),
     ("pause", "PAUSE / MENU"),
     ("menu_up", "MENU UP"),
@@ -104,20 +93,12 @@ def apply_human_timer_assist(sim: GhostlineSimulation, enabled: bool) -> None:
 
 
 class GameApp:
-    # Safe defaults also support lightweight renderer tests that construct an
-    # instance with ``__new__`` and attach only the state under inspection.
-    adaptive_mode = False
-    directive = ContractDirective.STANDARD
-    security_controller = None
-
     def __init__(
         self,
         *,
         initial_tier: int | None = None,
         seed: int | None = None,
         mode: Literal["menu", "play", "lab"] = "menu",
-        adaptive: bool = False,
-        directive: ContractDirective | str | int = ContractDirective.STANDARD,
     ):
         self.progression = load_progression()
         self.settings = load_settings()
@@ -126,22 +107,11 @@ class GameApp:
         self.lab_seed = seed if seed is not None else AGENT_SHOWCASE_SEEDS[self.selected_tier]
         self._lab_seed_is_custom = seed is not None
         self.mode = mode
-        self.adaptive_mode = bool(adaptive and mode != "lab")
-        self.directive = ContractDirective.parse(directive)
         self.state = "main" if mode == "menu" else ("lab" if mode == "lab" else "briefing")
         self.selection = self.selected_tier - 1 if mode == "lab" else 0
         self.running = True
         self.fullscreen = bool(self.settings["display"]["fullscreen"])
-        self.sim = (
-            GhostlineSimulationV2(
-                seed=seed or 10101,
-                tier=self.selected_tier,
-                directive=self.directive,
-            )
-            if self.adaptive_mode
-            else GhostlineSimulation(seed=seed or 10101, tier=self.selected_tier)
-        )
-        self.security_controller = None
+        self.sim = GhostlineSimulation(seed=seed or 10101, tier=self.selected_tier)
         self.renderer = GhostlineRenderer(
             self.sim,
             visible=True,
@@ -204,8 +174,6 @@ class GameApp:
         finally:
             if self.agent_env is not None:
                 self.agent_env.close()
-            if self.security_controller is not None:
-                self.security_controller.close()
             self.audio.close()
             self.renderer.close()
 
@@ -220,8 +188,6 @@ class GameApp:
         finally:
             if self.agent_env is not None:
                 self.agent_env.close()
-            if self.security_controller is not None:
-                self.security_controller.close()
             self.audio.close()
             self.renderer.close()
 
@@ -232,7 +198,6 @@ class GameApp:
         handlers = {
             "main": self._main_menu,
             "stage_select": self._stage_select,
-            "adaptive_setup": self._adaptive_setup,
             "briefing": self._briefing,
             "play": lambda: self._play(agent=False),
             "lab": self._lab_select,
@@ -352,8 +317,7 @@ class GameApp:
 
     def _main_menu(self) -> None:
         items = [
-            "PLAY PUBLISHED v1",
-            "PLAY MULTI-AGENT v2",
+            "PLAY",
             "AGENT LAB",
             "HOW TO PLAY",
             "SETTINGS",
@@ -362,22 +326,14 @@ class GameApp:
         ]
         choice = self._menu_events(self._events(), len(items))
         if choice == "confirm":
-            selected = self.selection
             self.state = (
-                "stage_select",
                 "stage_select",
                 "lab",
                 "howto",
                 "settings",
                 "credits",
                 "quit",
-            )[selected]
-            if selected in (0, 1):
-                self.adaptive_mode = selected == 1
-            elif selected == 2:
-                # Agent Lab retains the evaluated published-v1 runner until a
-                # developmental-v2 runner passes its own held-out gates.
-                self.adaptive_mode = False
+            )[self.selection]
             self.selection = 0
             if self.state == "lab" and not self._lab_seed_is_custom:
                 # The first Watch Agent run is the exact tier-six contract used
@@ -401,8 +357,8 @@ class GameApp:
                 f"CONTRACTS WON   {cleared}/6",
                 f"RUNTIME POLICY  {self.policy_name}",
                 "",
-                "V1  PUBLISHED CAMPAIGN + VERIFIED RUNNER",
-                "V2  NEW MAPS + COORDINATED SECURITY",
+                "SIX PROCEDURAL CONTRACT TIERS",
+                "AGENT LAB REPLAYS THE VERIFIED RUNNER",
             ],
             footer=f"{self._key_label('menu_up')}/{self._key_label('menu_down')}  NAVIGATE     {self._key_label('confirm')}  SELECT",
         )
@@ -417,14 +373,12 @@ class GameApp:
             tier = self.selection + 1
             if tier <= unlocked:
                 self.selected_tier = tier
-                self.state = "adaptive_setup" if self.adaptive_mode else "briefing"
-                if self.adaptive_mode:
-                    self.selection = int(self.directive)
+                self.state = "briefing"
         spec = TIERS[self.selection + 1]
         best = int(self.progression.get("best_scores", {}).get(str(spec.number), 0))
         self.renderer.draw_screen(
             title="CONTRACTS",
-            subtitle=("MULTI-AGENT v2 // CHOOSE A TIER" if self.adaptive_mode else f"V1 CLEARANCE {unlocked}/6"),
+            subtitle=f"CLEARANCE {unlocked}/6",
             items=items,
             selected=self.selection,
             panel_title=f"TIER {spec.number} // {spec.name.upper()}",
@@ -435,53 +389,7 @@ class GameApp:
                 f"WINDOW     {spec.mission_seconds // 60}:{spec.mission_seconds % 60:02d}",
                 f"BEST       {best:06d}" if best else "BEST       —",
             ],
-            footer=(
-                f"{self._key_label('back')}  BACK     v2 USES NEW FACILITIES + TEAM SECURITY"
-                if self.adaptive_mode
-                else f"{self._key_label('back')}  BACK     COMPLETE A CONTRACT TO UNLOCK THE NEXT TIER"
-            ),
-        )
-
-    def _adaptive_setup(self) -> None:
-        directives = list(ContractDirective)
-        items = [
-            "STANDARD // COMPLETE THE CONTRACT",
-            "GHOST // EXTRACT COLD, NO DAMAGE",
-            "SPEED // BEAT THE ROUTE PAR",
-            "GREED // TAKE EVERY TERMINAL",
-        ]
-        choice = self._menu_events(self._events(), len(items))
-        if choice == "back":
-            self.state, self.selection = "stage_select", self.selected_tier - 1
-        elif choice == "confirm":
-            self.directive = directives[self.selection]
-            self.state = "briefing"
-        descriptions = {
-            ContractDirective.STANDARD: "Quota and extraction decide the result.",
-            ContractDirective.GHOST: (
-                "Break contact, cool trace below 95%, then extract without damage."
-            ),
-            ContractDirective.SPEED: "A deterministic route-and-link par rewards decisive movement.",
-            ContractDirective.GREED: "Optional data becomes the objective, not a side score.",
-        }
-        chosen = directives[self.selection]
-        self.renderer.draw_screen(
-            title="MULTI-AGENT v2 CONTRACT",
-            subtitle=f"TIER {self.selected_tier} // CHOOSE AN OPERATING DIRECTIVE",
-            items=items,
-            selected=self.selection,
-            badge="ENV-v2 // MULTI-AGENT LAB",
-            panel_title=f"{chosen.name} DIRECTIVE",
-            panel=[
-                descriptions[chosen],
-                "",
-                "NEW FIELD SYSTEMS",
-                "CTRL  CROUCH / COVER",
-                "Q     ACOUSTIC DECOY",
-                "E     VENTS + FACILITY HACKS",
-                "OPS   LOCKS, SENSORS, PINCERS",
-            ],
-            footer=f"{self._key_label('confirm')}  CONTINUE     {self._key_label('back')}  TIERS",
+            footer=f"{self._key_label('back')}  BACK     COMPLETE A CONTRACT TO UNLOCK THE NEXT TIER",
         )
 
     def _lab_select(self) -> None:
@@ -540,14 +448,6 @@ class GameApp:
             elif event.type == pygame.KEYDOWN and event.key == self._key("back"):
                 self.state = "stage_select"
         spec = TIERS[self.selected_tier]
-        adaptive_lines = (
-            [
-                f"DIRECTIVE  {self.directive.name}",
-                "SECURITY   COORDINATED 5 HZ TACTICAL TEAM",
-            ]
-            if self.adaptive_mode
-            else []
-        )
         self.renderer.draw_screen(
             title=f"TIER {spec.number}: {spec.name.upper()}",
             subtitle=title,
@@ -558,9 +458,8 @@ class GameApp:
                 f"CONTRACT QUOTA  {spec.quota} DATA",
                 f"SECURITY  {spec.cameras} CAMERAS / {spec.guards} GUARDS",
                 f"WINDOW  {spec.mission_seconds // 60}:{spec.mission_seconds % 60:02d}",
-                *adaptive_lines,
             ],
-            badge=("MULTI-AGENT // ENV-v2" if self.adaptive_mode else f"CONTRACT // {self.selected_tier:02d}"),
+            badge=f"CONTRACT // {self.selected_tier:02d}",
             panel_title="FIELD PROTOCOL",
             panel=[
                 "AMBER   DATA TERMINAL",
@@ -568,16 +467,6 @@ class GameApp:
                 "CONE    ACTIVE SIGHTLINE",
                 "I/II/III  PATROL GRADE",
                 "TRACE   NETWORK PRESSURE",
-                *(
-                    [
-                        "CTRL    CROUCH / COVER",
-                        "Q       NOISE DECOY",
-                        "E       VENT OR FACILITY HACK",
-                        "VIOLET  TEMPORARY SECURITY LOCK",
-                    ]
-                    if self.adaptive_mode
-                    else []
-                ),
                 "",
                 f"SEED NAMESPACE  {'GUIDED' if self.selected_tier == 1 else 'PROCEDURAL'}",
             ],
@@ -587,9 +476,6 @@ class GameApp:
     def _start_mission(self, *, agent: bool, replay_seed: int | None = None) -> None:
         self._touch_points.clear()
         self._touch_roles.clear()
-        if self.security_controller is not None:
-            self.security_controller.close()
-            self.security_controller = None
         if self.agent_env is not None:
             self.agent_env.close()
             self.agent_env = None
@@ -608,25 +494,8 @@ class GameApp:
             self.agent_observation, _ = self.agent_env.reset(seed=mission_seed)
             self.sim = self.agent_env.sim
             self.agent_hidden = None
-        elif self.adaptive_mode:
-            self.sim = GhostlineSimulationV2(
-                seed=mission_seed,
-                tier=self.selected_tier,
-                directive=self.directive,
-                external_security=True,
-            )
-            apply_human_timer_assist(
-                self.sim, bool(self.settings["accessibility"].get("timer_assist", False))
-            )
-            self.agent_env = None
-            self.agent_hidden = None
-            controller_type = getattr(
-                importlib.import_module("ghostline.security_controller"),
-                "AdaptiveSecurityController",
-            )
-            self.security_controller = controller_type(self.sim)
         else:
-            if not isinstance(self.sim, GhostlineSimulation) or isinstance(self.sim, GhostlineSimulationV2):
+            if not isinstance(self.sim, GhostlineSimulation):
                 self.sim = GhostlineSimulation(seed=mission_seed, tier=self.selected_tier)
             else:
                 self.sim.reset(seed=mission_seed, tier=self.selected_tier)
@@ -654,9 +523,8 @@ class GameApp:
             ),
             "success": False,
             "actions": 0,
-            "action_counts": [0] * (RUNNER_ACTION_COUNT_V2 if self.adaptive_mode and not agent else 36),
-            "contract": "GhostlineEnv-v2" if self.adaptive_mode and not agent else "GhostlineEnv-v1",
-            "directive": self.directive.name.lower() if self.adaptive_mode and not agent else "standard",
+            "action_counts": [0] * 36,
+            "contract": "GhostlineEnv-v1",
             "policy_decisions": 0,
             "idle_ticks": 0,
             "path": [[0.0, round(float(self.sim.player[0]), 2), round(float(self.sim.player[1]), 2)]],
@@ -730,19 +598,7 @@ class GameApp:
             if phase == "down":
                 if TOUCH_PAUSE_RECT.collidepoint(point):
                     return True
-                if self.adaptive_mode and self._touch_circle_hit(
-                    point, TOUCH_INTERACT_CENTER, TOUCH_INTERACT_RADIUS + 7
-                ):
-                    role = "interact"
-                elif self.adaptive_mode and self._touch_circle_hit(
-                    point, TOUCH_CROUCH_CENTER, TOUCH_CROUCH_RADIUS + 7
-                ):
-                    role = "crouch"
-                elif self.adaptive_mode and self._touch_circle_hit(
-                    point, TOUCH_DECOY_CENTER, TOUCH_DECOY_RADIUS + 8
-                ):
-                    role = "decoy"
-                elif self._touch_circle_hit(point, TOUCH_DASH_CENTER, TOUCH_DASH_RADIUS + 8):
+                if self._touch_circle_hit(point, TOUCH_DASH_CENTER, TOUCH_DASH_RADIUS + 8):
                     role = "dash"
                 elif self._touch_circle_hit(point, TOUCH_PULSE_CENTER, TOUCH_PULSE_RADIUS + 8):
                     role = "pulse"
@@ -755,7 +611,7 @@ class GameApp:
                 self._touch_points[contact] = point
         return False
 
-    def _touch_action(self) -> Action | RunnerActionV2:
+    def _touch_action(self) -> Action:
         move_point = next(
             (self._touch_points[contact] for contact, role in self._touch_roles.items() if role == "move"),
             None,
@@ -768,15 +624,6 @@ class GameApp:
                 sector = int(round(math.atan2(dy, dx) / (math.pi / 4.0))) % 8
                 move = (3, 4, 5, 6, 7, 8, 1, 2)[sector]
         roles = set(self._touch_roles.values())
-        if self.adaptive_mode:
-            return RunnerActionV2(
-                move=move,
-                dash="dash" in roles,
-                pulse="pulse" in roles,
-                decoy="decoy" in roles,
-                crouch="crouch" in roles,
-                interact="interact" in roles,
-            )
         return Action(move=move, dash="dash" in roles, pulse="pulse" in roles)
 
     def _touch_visual_state(self) -> dict[str, Any]:
@@ -789,11 +636,6 @@ class GameApp:
             "move_point": move_point,
             "dash": "dash" in roles,
             "pulse": "pulse" in roles,
-            "decoy": "decoy" in roles,
-            "crouch": "crouch" in roles,
-            "interact": "interact" in roles,
-            "show_decoy": self.adaptive_mode,
-            "show_field_controls": self.adaptive_mode,
         }
 
     def _play(self, *, agent: bool) -> None:
@@ -867,26 +709,14 @@ class GameApp:
             }
             touch_action = self._touch_action()
             keyboard_move = move_lookup[(horizontal, vertical)]
-            if self.adaptive_mode:
-                action = RunnerActionV2(
-                    keyboard_move or touch_action.move,
-                    bool(keys[self._key("dash")]) or touch_action.dash,
-                    bool(keys[self._key("pulse")]) or touch_action.pulse,
-                    bool(keys[self._key("decoy")]) or bool(getattr(touch_action, "decoy", False)),
-                    bool(keys[self._key("crouch")]) or bool(getattr(touch_action, "crouch", False)),
-                    bool(keys[self._key("interact")]) or bool(getattr(touch_action, "interact", False)),
-                )
-            else:
-                action = Action(
-                    keyboard_move or touch_action.move,
-                    bool(keys[self._key("dash")]) or touch_action.dash,
-                    bool(keys[self._key("pulse")]) or touch_action.pulse,
-                )
+            action = Action(
+                keyboard_move or touch_action.move,
+                bool(keys[self._key("dash")]) or touch_action.dash,
+                bool(keys[self._key("pulse")]) or touch_action.pulse,
+            )
         self._telemetry["actions"] += 1
         self._telemetry["action_counts"][action.encode()] += 1
         self._telemetry["idle_ticks"] += int(action.move == 0)
-        if self.security_controller is not None:
-            self.security_controller.update()
         self.sim.advance(action, ticks=1)
         self._sample_telemetry()
         sim_events = self.sim.pop_events()
@@ -899,8 +729,6 @@ class GameApp:
             hidden_text = f"{float(np.linalg.norm(hidden)):.1f}"
         decoded = Action.decode(self._agent_action) if agent else action
         action_text = MOVE_LABELS[decoded.move] + (" +DASH" if decoded.dash else "") + (" +PULSE" if decoded.pulse else "")
-        if bool(getattr(decoded, "decoy", False)):
-            action_text += " +DECOY"
         self.renderer.draw(
             lab_stats={
                 "policy": self.policy_name,
@@ -957,22 +785,11 @@ class GameApp:
                 "decision_count": int(self._telemetry["actions"]),
                 "policy_latency_mean_ms": round(float(np.mean(latencies)), 4) if latencies else 0.0,
                 "policy_latency_p95_ms": round(float(np.percentile(latencies, 95)), 4) if latencies else 0.0,
-                "decoys_used": int(getattr(self.sim, "decoys_used", 0)),
-                "directive_success": bool(
-                    self._adaptive_directive_completed()
-                    if self.adaptive_mode and not self._debrief_agent
-                    else self.sim.extracted
-                ),
             }
         )
-        if self.security_controller is not None:
-            self._telemetry.update(self.security_controller.telemetry())
         self._telemetry.pop("last_sample_second", None)
         self._telemetry["recorded"] = True
         record_run({key: value for key, value in self._telemetry.items() if key != "recorded"})
-
-    def _adaptive_directive_completed(self) -> bool:
-        return bool(getattr(self.sim, "directive_completed", self.sim.extracted))
 
     def _pause(self) -> None:
         items = ["RESUME", "RESTART CONTRACT", "ACCESSIBILITY", "ABANDON TO MENU"]
@@ -990,11 +807,7 @@ class GameApp:
             self.state, self.selection = "main", 0
         self.renderer.draw_screen(
             title="PAUSED",
-            subtitle=(
-                f"TIER {self.selected_tier} // {self.directive.name} // SEED {self.sim.seed}"
-                if self.adaptive_mode
-                else f"TIER {self.selected_tier} // SEED {self.sim.seed}"
-            ),
+            subtitle=f"TIER {self.selected_tier} // SEED {self.sim.seed}",
             items=items,
             selected=self.selection,
             panel_title="LIVE CONTRACT",
@@ -1035,8 +848,6 @@ class GameApp:
                 badges.append("OPTIONAL DATA")
             if path_efficiency >= 0.80:
                 badges.append("EFFICIENT ROUTE")
-            if self.adaptive_mode and self._adaptive_directive_completed():
-                badges.append(f"{self.directive.name} DIRECTIVE")
         outcome_lines = [f"BADGES      {' // '.join(badges[:2]) if badges else 'NONE'}"]
         if not self.sim.extracted:
             outcome_lines = [f"FAILURE     {self.sim.fail_reason.replace('_', ' ').upper()}"]
@@ -1048,20 +859,10 @@ class GameApp:
         body = [
             f"DATA        {self.sim.data}/{self.sim.level.quota}  (+{self.sim.optional_data} OPTIONAL)",
             f"TIME        {self.sim.elapsed_seconds:6.1f}s",
-            *(
-                [f"EXIT TRACE  {self.sim.trace:6.1f}%"]
-                if self.adaptive_mode
-                else []
-            ),
             f"MAX TRACE   {self.sim.max_trace:6.1f}%",
             f"DETECTIONS  {self.sim.detections}",
             f"INTEGRITY   {self.sim.integrity}/3",
             f"EFFICIENCY  {path_efficiency * 100:5.1f}%",
-            *(
-                [f"DIRECTIVE   {self.directive.name} {'PASSED' if self._adaptive_directive_completed() else 'MISSED'}"]
-                if self.adaptive_mode
-                else []
-            ),
             *outcome_lines,
             f"SCORE       {score:06d}",
         ]
@@ -1073,11 +874,7 @@ class GameApp:
             footer = f"{self._key_label('confirm')}  RETRY SAME SEED     {self._key_label('back')}  MAIN MENU"
         self.renderer.draw_screen(
             title=status,
-            subtitle=(
-                f"TIER {self.selected_tier} // {self.directive.name} // SEED {self.sim.seed}"
-                if self.adaptive_mode
-                else f"TIER {self.selected_tier} // SEED {self.sim.seed}"
-            ),
+            subtitle=f"TIER {self.selected_tier} // SEED {self.sim.seed}",
             body=body,
             badge="AGENT RUN" if self._debrief_agent else "OPERATIVE RUN",
             panel_title="BENCHMARK RECORD",
@@ -1086,14 +883,6 @@ class GameApp:
                 f"DISTANCE    {self.sim.distance_travelled:7.1f}px",
                 f"IDLE        {float(self._telemetry.get('idle_fraction', 0)) * 100:5.1f}%",
                 f"PULSE USE   {self.sim.pulses_used}",
-                *(
-                    [
-                        f"DECOY USE   {getattr(self.sim, 'decoys_used', 0)}",
-                        f"SECURITY    {self.security_controller.policy_name if self.security_controller else 'TACTICAL TEAM'}",
-                    ]
-                    if self.adaptive_mode
-                    else []
-                ),
                 f"POLICY P95  {float(self._telemetry.get('policy_latency_p95_ms', 0)):5.2f}ms" if self._debrief_agent else "POLICY P95  —",
             ],
             footer=footer,
@@ -1110,9 +899,6 @@ class GameApp:
                 f"{self._key_label('move_up')}/{self._key_label('move_left')}/{self._key_label('move_down')}/{self._key_label('move_right')}   MOVE",
                 f"{self._key_label('dash'):<11} DASH // FAST, LOUD, ENERGY-LIMITED",
                 f"{self._key_label('pulse'):<11} DISRUPTION PULSE // LIMITED CHARGES",
-                f"{self._key_label('decoy'):<11} NOISE DECOY // MULTI-AGENT v2",
-                f"{self._key_label('crouch'):<11} CROUCH // QUIETER, SLOWER, BETTER IN COVER",
-                f"{self._key_label('interact'):<11} USE // ENTER VENTS OR HACK A FIELD SYSTEM",
                 "",
                 "Enter an amber ring to link. Movement inside never interrupts it.",
                 "Leaving pauses the link; returning resumes it at the same progress.",
@@ -1137,8 +923,6 @@ class GameApp:
                 "Pulse disables electronics.",
                 "Dash makes noise.",
                 "Violet aim line: suppressor round.",
-                "Adaptive locks warn before closing",
-                "   and never take the only route.",
             ],
             footer=f"{self._key_label('back')} OR {self._key_label('confirm')}  BACK",
         )
@@ -1353,7 +1137,7 @@ class GameApp:
         name = name.strip().lower()
         bindings = self.settings["bindings"]
         previous = str(bindings[action])
-        gameplay_actions = {"move_up", "move_down", "move_left", "move_right", "dash", "pulse", "decoy", "crouch", "interact", "restart", "pause"}
+        gameplay_actions = {"move_up", "move_down", "move_left", "move_right", "dash", "pulse", "restart", "pause"}
         menu_actions = {"menu_up", "menu_down", "confirm", "back"}
         group = gameplay_actions if action in gameplay_actions else menu_actions
         conflict = next((other for other, current in bindings.items() if other in group and other != action and current == name), None)

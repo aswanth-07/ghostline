@@ -1123,7 +1123,7 @@ def test_field_manual_panel_renders_all_of_its_copy(monkeypatch) -> None:
     assert captured["panel_title"] == "READ THE SECURITY LAYER"
     # Every documented cue survives the tightened copy.
     joined = " ".join(panel).lower()
-    for cue in ("camera", "guard", "elite", "suppressor", "pulse", "dash", "lock"):
+    for cue in ("camera", "guard", "elite", "suppressor", "pulse", "dash", "last seen"):
         assert cue in joined, f"{cue} legend entry was lost"
     renderer.close()
 

@@ -195,26 +195,23 @@ def test_environment_contract_and_checker() -> None:
     env.close()
 
 
-def test_registered_legacy_published_v1_and_multi_agent_v2_contracts() -> None:
+def test_registered_legacy_and_published_v1_contracts() -> None:
     import ghostline
 
     legacy = gym.make("GhostlineLegacyEnv-v0", seed=5, tier=1)
     published = gym.make("GhostlineEnv-v1", seed=5, tier=1)
-    multi_agent = gym.make("GhostlineEnv-v2", seed=5, tier=1)
     legacy_observation, _ = legacy.reset(seed=5)
     published_observation, published_info = published.reset(seed=5)
-    multi_agent_observation, multi_agent_info = multi_agent.reset(seed=5)
     assert "objective" not in legacy_observation
     assert published_observation["objective"].shape == (8,)
     assert published_info["contract"] == "GhostlineEnv-v1"
-    assert multi_agent_observation["objective"].shape == (8,)
-    assert multi_agent_observation["directive"].shape == (6,)
-    assert multi_agent_info["contract"] == "GhostlineEnv-v2"
+    # The immutable artifacts were signed under this internal label; the public
+    # name is v1 and rewriting the signed bytes would invalidate them.
+    assert published_info["historical_internal_contract"] == "GhostlineEnv-v2"
     assert published.observation_space.contains(published_observation)
-    assert multi_agent.observation_space.contains(multi_agent_observation)
+    assert "GhostlineEnv-v2" not in gym.registry
     legacy.close()
     published.close()
-    multi_agent.close()
 
 
 @pytest.mark.parametrize("lesson,expected_tier", [(1, 1), (2, 1), (3, 1), (4, 2), (5, 3), (6, 4), (7, 6)])

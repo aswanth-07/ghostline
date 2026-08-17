@@ -84,23 +84,15 @@ WEB_RUNTIME_MODULES = (
     "app.py",
     "audio.py",
     "config.py",
-    "config_v2.py",
     "env.py",
     "env_v1.py",
-    "env_v2.py",
     "generation.py",
-    "generation_v2.py",
     "policies.py",
     "presentation.py",
     "progression.py",
     "resources.py",
-    "security_baselines.py",
-    "security_controller.py",
-    "security_types.py",
     "simulation.py",
-    "simulation_v2.py",
     "types.py",
-    "types_v2.py",
 )
 # Retained as a public audit/compatibility contract for tools that inspect the
 # old recursive-copy filter. Production staging is stricter: it copies only

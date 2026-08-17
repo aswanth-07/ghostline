@@ -28,27 +28,17 @@ def run_worker(
     worker: int,
     decisions: int,
     tier: int,
-    adaptive: bool = False,
 ) -> tuple[float, int]:
     """Run one independent deterministic random-action workload."""
 
-    if adaptive:
-        from ghostline.env_v2 import GhostlineEnvV2
-
-        env = GhostlineEnvV2(seed=worker, tier=tier)
-    else:
-        env = GhostlineEnv(seed=worker, tier=tier)
+    env = GhostlineEnv(seed=worker, tier=tier)
     observation, _ = env.reset(seed=worker)
     rng = np.random.default_rng(9_173 + worker)
     resets = 0
     started = time.perf_counter()
     try:
         for _ in range(decisions):
-            if adaptive:
-                legal = np.flatnonzero(observation["action_mask"])
-                action = int(legal[int(rng.integers(0, len(legal)))])
-            else:
-                action = int(rng.integers(0, 36))
+            action = int(rng.integers(0, 36))
             observation, _, terminated, truncated, _ = env.step(action)
             if terminated or truncated:
                 resets += 1
@@ -122,7 +112,6 @@ def run_benchmark(
     tier: int,
     workers: int,
     minimum_decisions_per_second: float = 0.0,
-    adaptive: bool = False,
 ) -> dict[str, object]:
     """Execute the benchmark and return its provenance-bound report."""
 
@@ -137,7 +126,7 @@ def run_benchmark(
     workers = min(workers, os.cpu_count() or workers)
     wall_started = time.perf_counter()
     if workers == 1:
-        results = [run_worker(0, decisions, tier, adaptive)]
+        results = [run_worker(0, decisions, tier)]
     else:
         with ProcessPoolExecutor(max_workers=workers) as pool:
             results = list(
@@ -146,24 +135,13 @@ def run_benchmark(
                     range(workers),
                     [decisions] * workers,
                     [tier] * workers,
-                    [adaptive] * workers,
                 )
             )
     wall_elapsed = time.perf_counter() - wall_started
-    if adaptive:
-        from ghostline.model_v2 import multi_agent_environment_fingerprint
-
-        fingerprint = multi_agent_environment_fingerprint(
-            ROOT / "src" / "ghostline"
-        )
-        report_contract = "ghostline-headless-throughput-v2"
-        observation_contract = "GhostlineEnv-v2"
-        action_count = 288
-    else:
-        fingerprint = environment_fingerprint(ROOT / "src" / "ghostline")
-        report_contract = REPORT_CONTRACT
-        observation_contract = OBSERVATION_CONTRACT
-        action_count = 36
+    fingerprint = environment_fingerprint(ROOT / "src" / "ghostline")
+    report_contract = REPORT_CONTRACT
+    observation_contract = OBSERVATION_CONTRACT
+    action_count = 36
     return _build_report(
         decisions=decisions,
         tier=tier,
@@ -187,11 +165,6 @@ def main() -> None:
     parser.add_argument("--decisions", type=int, default=2_000, help="Decisions per worker")
     parser.add_argument("--tier", type=int, choices=range(1, 7), default=6)
     parser.add_argument(
-        "--adaptive",
-        action="store_true",
-        help="benchmark the developmental 288-action v2 environment",
-    )
-    parser.add_argument(
         "--workers",
         type=int,
         default=1,
@@ -211,7 +184,6 @@ def main() -> None:
             tier=args.tier,
             workers=args.workers,
             minimum_decisions_per_second=args.minimum_decisions_per_second,
-            adaptive=args.adaptive,
         )
     except ValueError as error:
         parser.error(str(error))
