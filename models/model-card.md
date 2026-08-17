@@ -10,11 +10,11 @@ Windows and web builds, and is tied to the environment fingerprint below. No
 superhuman claim is made because the planned matched-seed human cohort has not
 yet been collected.
 
-The checkpoint and its benchmark reports predate the public version migration,
-so their signed metadata still names the same contract `GhostlineEnv-v2`.
-That string is retained as `historical_internal_contract` provenance and is
-not evidence for the new multi-agent public v2 environment. Rewriting those
-immutable artifacts would invalidate their hashes.
+The checkpoint and its benchmark reports predate the public version rename, so
+their signed metadata still names the contract `GhostlineEnv-v2`. That string is
+retained as `historical_internal_contract` provenance and refers to this exact
+environment; the public id is `GhostlineEnv-v1`. Rewriting those immutable
+artifacts would invalidate the hashes that authenticate them.
 
 ## Model
 
@@ -26,41 +26,6 @@ immutable artifacts would invalidate their hashes.
 - Memory: configurable 256- or 384-unit GRU over recurrent sequences; 384 is the default candidate.
 - Heads: separate 256-unit policy/value decoders plus goal-bearing and visible-danger auxiliaries.
 - Learning: pure in-project PyTorch behavior cloning from the observation-only teacher, four DAgger recovery rounds, and low-rate consolidation. PPO/GAE/RND are implemented and tested, but the current release checkpoint does not claim a PPO improvement.
-
-## Developmental multi-agent v2
-
-Public `GhostlineEnv-v2` is a separate, in-development contract with new maps,
-runner actions, observations, mechanics, and multi-agent security control. It
-does not reuse this card's acceptance result. Its security environment is
-`GhostlineSecurityParallel-v2`: up to five operatives use a parameter-shared
-recurrent actor, while training uses an agent-specific 72-value centralized
-critic state. The security policy selects one of ten semantic intents and one
-of ten context-dependent tactical targets through a joint legal-action mask.
-
-The previously bundled security checkpoint, SHA-256
-`c7d717d16b6a60c580e3d909043bf9dd107a6a1c6cf009dd77d3c0804308c839`,
-and its `4/0/8/16%` tier 3-6 result belong to the retired
-`GhostlineSecurityParallel-v0` / pre-migration research contract. They are
-preserved as historical negative evidence only. Changes to the observation,
-conditional action mask, critic state, rewards, generation, and fingerprint
-make that checkpoint invalid for v2; the launcher rejects it and uses the
-deterministic tactical fallback when no compatible learned policy is present.
-No learned-security or v2-runner acceptance result is claimed yet.
-
-The developmental runner environment is frozen at fingerprint
-`01d1b7835d17172edc8dda1158d93e5c24e9362cc3472722b4aee77452c75e8f`;
-the current security learning contract is
-`97dfb60808aef79add8b9b67992daa03694d8a173c70d2fb1e20687e1d66c7c9`.
-Readiness evidence includes 10,000 valid generated facilities, exact
-fresh/resume runner and security smokes, and 1,000/1,000 deterministic v2
-runner PyTorch/ONNX actions. These are correctness gates, not performance
-results. The v2 20M final-test slice remains reserved and unopened.
-The current-v2 security ledger likewise reserves 14M against the immutable
-published-v1 runner and remains unopened.
-
-The retired security checkpoint remains in the source archive so its negative
-result can be audited. It is deliberately absent from the lightweight player
-wheel and cannot be selected by the v2 launcher.
 
 ## Data and fairness
 
@@ -142,12 +107,12 @@ before the final slice was opened. Exact reports and lineage are indexed in
 ## Intended use and limitations
 
 This is a portfolio/research policy for procedural, partially observed game
-RL. Results are tied only to the frozen public-v1 mechanics and observation
-contract (historically labeled `GhostlineEnv-v2` inside the immutable
-artifacts). They do not transfer automatically to developmental v2.
-Deterministic success does not imply optimal trace, optional-data collection,
-or route efficiency, and no comparison with real players is valid until the
-planned matched-seed human cohort is complete.
+RL. Results are tied to the frozen mechanics and observation contract (labeled
+`GhostlineEnv-v2` inside the immutable artifacts). Deterministic success does
+not imply optimal trace, optional-data collection or route efficiency — median
+maximum trace is saturated at 100.0 on tiers 3, 4 and 6, so the policy solves
+contracts without playing quietly. No comparison with real players is valid
+until a matched-seed human cohort is collected.
 
 ## Deployment precision gate
 

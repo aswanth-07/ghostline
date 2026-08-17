@@ -12,7 +12,7 @@ license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 requires-python = ">=3.12,<3.15"
 keywords = ["reinforcement-learning", "pygame", "gymnasium", "procedural-generation", "stealth-game"]
 classifiers = [
-  "Development Status :: 4 - Beta",
+  "Development Status :: 5 - Production/Stable",
   "Intended Audience :: Developers",
   "Intended Audience :: Science/Research",
   "Operating System :: OS Independent",
@@ -75,8 +75,11 @@ web = [
 ghostline = "ghostline.cli:main"
 
 [project.urls]
-Homepage = "https://github.com/aswanth-07/ghostline"
+Homepage = "https://ghostline-rho.vercel.app"
+Demo = "https://ghostline-rho.vercel.app"
 Repository = "https://github.com/aswanth-07/ghostline"
+Documentation = "https://github.com/aswanth-07/ghostline/blob/main/wiki/index.md"
+Changelog = "https://github.com/aswanth-07/ghostline/blob/main/CHANGELOG.md"
 Issues = "https://github.com/aswanth-07/ghostline/issues"
 
 [tool.setuptools.packages.find]

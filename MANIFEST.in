@@ -24,8 +24,6 @@ include wiki/training.md
 include wiki/setup.md
 include wiki/assets.md
 include wiki/web-deployment.md
-include wiki/improvement-proposals.md
-include wiki/rl-architecture-proposals.md
 
 # Include the runnable Ghostline suite, but not the three frozen legacy
 # prototype suites whose neon_arena package is intentionally absent below.

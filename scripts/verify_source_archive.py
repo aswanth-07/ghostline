@@ -60,8 +60,6 @@ DOCUMENTATION_ALLOWED = {
     "wiki/setup.md",
     "wiki/assets.md",
     "wiki/web-deployment.md",
-    "wiki/improvement-proposals.md",
-    "wiki/rl-architecture-proposals.md",
 }
 RELEASE_REQUIRED = {
     "benchmarks/neural/champion-final-8m-500.json",

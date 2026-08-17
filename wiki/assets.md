@@ -82,11 +82,10 @@ difference under motion is cone-pose quantisation, measured at 0.013% of pixels
 on the worst frame of a 270-frame sweep.
 
 The 2026-07-26 review follow-up is under `artifacts/qa/review-final/` and
-`artifacts/qa/review-final-adaptive/`. It fixes precise desktop pacing,
+`artifacts/qa/review-final/`. It fixes precise desktop pacing,
 reuses native glyph surfaces, and scales directly into native 16:9 display
 surfaces. The same conservative full render/present benchmark now measures
-61.87/61.44 FPS for classic 720p/1080p and 60.56/61.21 FPS for adaptive
-720p/1080p. Both 20-scene matrices pass native-text, crop, and integer-scale
+61.87/61.44 FPS at 720p/1080p. Both 20-scene matrices pass native-text, crop, and integer-scale
 checks.
 
 The 2026-07-16 interface pass is under `artifacts/qa/ui-refresh/` and `artifacts/qa/video-refresh/`. It verifies the portfolio-aligned black/cyan/magenta interface, compact Agent Lab tile below the minimap, uncluttered guard awareness language, protected objective/detection lanes, native 720p recording, and current persistent security telemetry. The 20-scene scale matrix passed with native text at both release sizes and measured 60.30 FPS at 1280x720 and 56.24 FPS at 1920x1080 in the conservative hidden-window compositor benchmark. The earlier frozen-gameplay matrices remain useful historical baselines.
