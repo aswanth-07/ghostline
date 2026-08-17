@@ -1415,3 +1415,59 @@ def test_debrief_keeps_earned_badge_names_on_atomic_lines(monkeypatch) -> None:
     assert "FAILURE     CONTRACT EXPIRED" in failed_body
     assert not any(line.startswith("BADGES") for line in failed_body)
     renderer.close()
+
+
+def test_visual_qa_harness_matches_the_live_menus(monkeypatch) -> None:
+    """The capture harness must render the screens the game actually shows.
+
+    The harness declares its own copy so it can render a screen without driving
+    the whole app. That duplication has drifted twice, and the second time it
+    hid real Field Manual clipping from every tracked screenshot: the captures
+    looked correct because they were rendering copy the release did not have.
+    """
+
+    import importlib.util
+    from pathlib import Path
+
+    from ghostline.app import GameApp
+    from ghostline.presentation import GhostlineRenderer
+
+    spec = importlib.util.spec_from_file_location(
+        "ghostline_qa_scaled_visuals",
+        Path(__file__).resolve().parents[1] / "scripts" / "qa_scaled_visuals.py",
+    )
+    assert spec is not None and spec.loader is not None
+    harness = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(harness)
+
+    def captured(screen: str) -> dict[str, object]:
+        renderer = GhostlineRenderer(GhostlineSimulation(seed=7, tier=1), visible=False)
+        app = GameApp.__new__(GameApp)
+        app.renderer = renderer
+        app.selection = 0
+        app.progression = {"highest_unlocked_tier": 6, "best_scores": {}}
+        app.settings = {"bindings": dict(DEFAULT_BINDINGS)}
+        app.policy_name = "RECURRENT ONNX POLICY"
+        app.state = screen
+        seen: dict[str, object] = {}
+        monkeypatch.setattr(renderer, "draw_screen", lambda **kwargs: seen.update(kwargs))
+        monkeypatch.setattr(app, "_events", lambda: [])
+        app._main_menu()
+        renderer.close()
+        return seen
+
+    live = captured("main")
+    harness_scene: dict[str, object] = {}
+    renderer = GhostlineRenderer(GhostlineSimulation(seed=7, tier=1), visible=False)
+    monkeypatch.setattr(renderer, "draw_screen", lambda **kwargs: harness_scene.update(kwargs))
+    harness._title(renderer)
+    renderer.close()
+
+    assert harness_scene["items"] == live["items"], "harness menu drifted from the game"
+    assert harness_scene["title"] == live["title"]
+    assert harness_scene["badge"] == live["badge"]
+    # Panel values differ (the harness pins 6/6 for a stable capture), but the
+    # non-numeric lines are copy and must not diverge.
+    live_copy = [line for line in live["panel"] if line and not any(ch.isdigit() for ch in line)]
+    harness_copy = [line for line in harness_scene["panel"] if line and not any(ch.isdigit() for ch in line)]
+    assert harness_copy == live_copy, "harness panel copy drifted from the game"

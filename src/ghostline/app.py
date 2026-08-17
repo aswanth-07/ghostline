@@ -317,7 +317,7 @@ class GameApp:
 
     def _main_menu(self) -> None:
         items = [
-            "PLAY",
+            "PLAY CONTRACTS",
             "AGENT LAB",
             "HOW TO PLAY",
             "SETTINGS",
