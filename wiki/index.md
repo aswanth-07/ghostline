@@ -52,3 +52,10 @@ name without touching the fingerprinted bytes, and reports the old label as
 - `assets.md`: visual and audio workflow, with authorship disclosure.
 - `web-deployment.md`: static Pygbag/ONNX Runtime Web architecture, build,
   Chrome QA, and Vercel release.
+
+## Related research
+
+This repository is the finished single-agent v1 release. The separate
+[`ghostline-marl`](https://github.com/aswanth-07/ghostline-marl) repository
+contains the active multi-agent adversarial research track. It is intentionally
+kept separate and does not claim a validated result yet.

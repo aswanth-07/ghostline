@@ -102,6 +102,14 @@ python -m pip install --constraint requirements.lock -e ".[agent]"
 ghostline lab --tier 6 --seed 2000000
 ```
 
+## Research continuation
+
+The finished single-agent release stays in this repository. Multi-agent
+adversarial co-training continues separately in
+[`aswanth-07/ghostline-marl`](https://github.com/aswanth-07/ghostline-marl).
+That repository is an active research track and does not claim a validated
+result yet.
+
 ## Verify the result yourself
 
 The claim above is checkable in about five minutes, without retraining
