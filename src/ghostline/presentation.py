@@ -35,12 +35,6 @@ TOUCH_DASH_CENTER = (574, 255)
 TOUCH_DASH_RADIUS = 27
 TOUCH_PULSE_CENTER = (516, 255)
 TOUCH_PULSE_RADIUS = 23
-TOUCH_DECOY_CENTER = (548, 318)
-TOUCH_DECOY_RADIUS = 22
-TOUCH_CROUCH_CENTER = (486, 318)
-TOUCH_CROUCH_RADIUS = 20
-TOUCH_INTERACT_CENTER = (610, 318)
-TOUCH_INTERACT_RADIUS = 20
 TOUCH_PAUSE_RECT = pygame.Rect(592, 82, 38, 25)
 WINDOW_SIZE = (1280, 720)
 
@@ -98,7 +92,6 @@ GREEN = (108, 255, 177)
 
 # Color-Safe replacement pair, shared by the world pixel mask and the native
 # text path so one rule set governs both.
-_V2_DECOR_KINDS = ("floor_marking", "wall_sign", "cable_run")
 
 COLOR_SAFE_DANGER = (255, 92, 190)
 COLOR_SAFE_SAFE = (82, 184, 255)
@@ -404,7 +397,6 @@ class GhostlineRenderer:
         self._diagonal_locomotion_cache: dict[tuple[str, int, int, bool], pygame.Surface] = {}
         self._last_room_role = ""
         self._touch_layout = False
-        self._crouch_cache: dict[tuple[int, int, int], pygame.Surface] = {}
         self._hud_panel_rect = pygame.Rect(0, 0, LOGICAL_SIZE[0], HUD_BAND_HEIGHT)
         self._minimap_rect = pygame.Rect(CHROME_CLUSTER_X, CHROME_CLUSTER_Y, 100, 56)
         self.font_small = pygame.font.SysFont("consolas", 10, bold=True)
@@ -589,20 +581,6 @@ class GhostlineRenderer:
             "drone_deployed": ("[ROTOR] Response drone inbound", VIOLET),
             "drone_warning": ("[NETWORK] Response drone threshold near", VIOLET),
             "guard_clear": ("[SECURITY] Search cleared", GREEN),
-            "decoy_deployed": ("[DECOY] Acoustic lure deployed", CYAN),
-            "door_warning": ("[NETWORK] Security door is locking", AMBER),
-            "door_locked": ("[LOCK] Route sealed temporarily", VIOLET),
-            "door_forced_open": ("[PULSE] Security lock overridden", CYAN),
-            "suppressor_aim": ("[WARNING] Suppressor is lining up a shot", VIOLET),
-            "suppressor_fire": ("[PROJECTILE] Shock round fired", VIOLET),
-            "vent_enter": ("[DUCT] Transit committed", CYAN),
-            "vent_exit": ("[DUCT] Exit reached", CYAN),
-            "hack_camera": ("[FIELD] Camera link disabled", CYAN),
-            "hack_door": ("[FIELD] Security door overridden", CYAN),
-            "hack_lights": ("[FIELD] Room lighting suppressed", VIOLET),
-            "sensor_deployed": ("[SECURITY] Field sensor deployed", AMBER),
-            "sensor_trip": ("[SENSOR] Crossing reported", RED),
-            "footstep": ("[STEPS] Movement is audible", MUTED),
         }
         for event in events:
             position = np.asarray(event.position, dtype=np.float32)
@@ -642,20 +620,6 @@ class GhostlineRenderer:
                 "drone_deployed": VIOLET,
                 "drone_warning": VIOLET,
                 "guard_clear": GREEN,
-                "decoy_deployed": CYAN,
-                "door_warning": AMBER,
-                "door_locked": VIOLET,
-                "door_forced_open": CYAN,
-                "suppressor_aim": VIOLET,
-                "suppressor_fire": VIOLET,
-                "projectile_impact": VIOLET,
-                "vent_enter": CYAN,
-                "vent_exit": CYAN,
-                "hack_camera": CYAN,
-                "hack_door": CYAN,
-                "hack_lights": VIOLET,
-                "sensor_deployed": AMBER,
-                "sensor_trip": RED,
             }.get(event.kind)
             if color is None:
                 continue
@@ -703,11 +667,7 @@ class GhostlineRenderer:
         self._draw_security_cones()
         self._draw_walls()
         self._draw_props()
-        self._draw_v2_darkness()
         self._draw_objectives()
-        self._draw_v2_field_state()
-        self._draw_stealth_state()
-        self._draw_adaptive_mechanics()
         self._draw_security()
         self._draw_player()
         self._draw_particles()
@@ -1161,18 +1121,6 @@ class GhostlineRenderer:
             self._blit_accessible_sprite(atlas_sprite, destination)
             return
         kind = prop.kind
-        # V2 facility structure and flavour. These are drawn code-natively
-        # rather than added to the release atlases so they need no new binary
-        # asset, stay deterministic, and cannot change the packaged manifest.
-        if kind in _V2_DECOR_KINDS:
-            self._draw_v2_decor(kind, rect)
-            return
-        if kind in ("pillar", "partition"):
-            self._draw_v2_structure(kind, rect)
-            return
-        if kind in ("vent_shaft", "hack_panel"):
-            self._draw_v2_field_prop(kind, rect)
-            return
         pygame.draw.rect(self.logical, (6, 10, 14), rect.move(3, 5), border_radius=2)
         if kind in ("desk", "meeting_table", "coffee_table", "lab_bench"):
             color = (83, 66, 61) if kind != "lab_bench" else (57, 84, 86)
@@ -1229,169 +1177,6 @@ class GhostlineRenderer:
             pygame.draw.rect(self.logical, (51, 63, 67), rect, border_radius=2)
             pygame.draw.rect(self.logical, (79, 98, 101), rect, 1, border_radius=2)
             pygame.draw.line(self.logical, (26, 35, 40), rect.topleft, rect.bottomright)
-
-    def _draw_v2_structure(self, kind: str, rect: pygame.Rect) -> None:
-        """Load-bearing interior structure: concrete pillars and partitions.
-
-        Both block sight and movement, so they read as heavy architecture rather
-        than furniture: a hard cast shadow, a lit top face, and a grounded base
-        so the player can tell instantly that they cannot walk or see through.
-        """
-
-        shadow = rect.move(4, 6)
-        pygame.draw.rect(self.logical, (4, 7, 10), shadow, border_radius=2)
-        if kind == "pillar":
-            body = rect.inflate(-rect.width // 3, 0)
-            pygame.draw.rect(self.logical, (58, 64, 72), body)
-            pygame.draw.rect(self.logical, (86, 94, 104), (body.x, body.y, body.width, 4))
-            pygame.draw.rect(self.logical, (30, 35, 41), (body.x, body.bottom - 4, body.width, 4))
-            pygame.draw.line(self.logical, (74, 82, 92), (body.centerx, body.y + 4), (body.centerx, body.bottom - 4))
-            return
-        # Partition: a low glass-and-steel divider.
-        pygame.draw.rect(self.logical, (38, 46, 54), rect)
-        glass = rect.inflate(-4, -8)
-        pygame.draw.rect(self.logical, (52, 88, 96), glass)
-        pygame.draw.rect(self.logical, (96, 150, 158), glass, 1)
-        for offset in range(glass.x + 3, glass.right - 2, 5):
-            pygame.draw.line(self.logical, (74, 118, 126), (offset, glass.y + 1), (offset, glass.bottom - 2))
-        pygame.draw.rect(self.logical, (74, 82, 92), (rect.x, rect.bottom - 3, rect.width, 3))
-
-    def _draw_v2_decor(self, kind: str, rect: pygame.Rect) -> None:
-        """Non-blocking flavour that gives a room a purpose.
-
-        None of this affects navigation, sight, or any policy observation; it
-        exists so a space reads as a loading bay or a server aisle rather than a
-        rectangle with furniture in it.
-        """
-
-        if kind == "floor_marking":
-            band = pygame.Rect(rect.x, rect.centery - 3, rect.width, 6)
-            pygame.draw.rect(self.logical, (58, 52, 26), band)
-            for offset in range(band.x, band.right - 2, 6):
-                pygame.draw.line(self.logical, (138, 122, 54), (offset, band.bottom - 1), (offset + 3, band.y))
-        elif kind == "wall_sign":
-            plate = pygame.Rect(rect.centerx - 7, rect.y + 2, 14, 8)
-            pygame.draw.rect(self.logical, (22, 32, 38), plate, border_radius=1)
-            pygame.draw.rect(self.logical, (58, 96, 104), plate, 1, border_radius=1)
-            pygame.draw.line(self.logical, CYAN, (plate.x + 3, plate.centery), (plate.right - 3, plate.centery))
-        elif kind == "cable_run":
-            base = rect.centery + 2
-            for index, tint in enumerate(((44, 58, 66), (38, 70, 76), (60, 48, 40))):
-                y = base + index * 2 - 2
-                pygame.draw.line(self.logical, tint, (rect.x, y), (rect.right, y))
-
-    def _draw_v2_field_prop(self, kind: str, rect: pygame.Rect) -> None:
-        """Vent shafts and hackable panels.
-
-        Both are interactive, so they carry a shared visual grammar: a bright
-        inner element on a recessed housing, pulsing gently when the runner is
-        close enough to use them. Reduced Motion freezes the pulse.
-        """
-
-        pulse = 0.0 if self.reduced_motion else 0.5 + 0.5 * math.sin(self._time * 3.2)
-        if kind == "vent_shaft":
-            housing = rect.inflate(-4, -8)
-            pygame.draw.rect(self.logical, (18, 24, 30), housing)
-            pygame.draw.rect(self.logical, (74, 96, 108), housing, 1)
-            # Louvre slats read as a duct rather than a floor hatch.
-            for offset in range(housing.y + 2, housing.bottom - 1, 3):
-                pygame.draw.line(self.logical, (52, 70, 82), (housing.x + 2, offset), (housing.right - 3, offset))
-            glow = int(40 + 40 * pulse)
-            pygame.draw.rect(self.logical, (glow, glow + 30, glow + 46), housing, 1)
-            return
-        # Grounded control pedestal.  Panels are valid floor interaction cells,
-        # so drawing a wall-mounted object in the room centre was misleading.
-        pygame.draw.ellipse(
-            self.logical,
-            (4, 8, 12),
-            (rect.x + 5, rect.bottom - 10, rect.width - 10, 7),
-        )
-        base = pygame.Rect(rect.x + 9, rect.y + 13, rect.width - 18, rect.height - 17)
-        pygame.draw.rect(self.logical, (25, 31, 39), base, border_radius=2)
-        pygame.draw.rect(self.logical, (73, 78, 91), base, 1, border_radius=2)
-        body = pygame.Rect(rect.x + 6, rect.y + 5, rect.width - 12, 14)
-        pygame.draw.polygon(
-            self.logical,
-            (14, 20, 26),
-            (body.bottomleft, body.topleft, body.topright, body.bottomright),
-        )
-        pygame.draw.rect(self.logical, (86, 74, 120), body, 1, border_radius=2)
-        screen = body.inflate(-5, -5)
-        pygame.draw.rect(self.logical, (30, 26, 52), screen, border_radius=1)
-        for offset in range(screen.y + 1, screen.bottom - 1, 2):
-            pygame.draw.line(self.logical, (60, 52, 96), (screen.x + 1, offset), (screen.right - 2, offset))
-        light = (VIOLET[0], int(VIOLET[1] * (0.55 + 0.45 * pulse)), VIOLET[2])
-        pygame.draw.rect(self.logical, light, (body.right - 4, body.y + 2, 2, 2))
-
-    def _draw_v2_field_state(self) -> None:
-        """Live overlays for the new mechanics.
-
-        Every one of these is a mechanical state the player must be able to
-        read instantly: a sealed door, an armed sensor, a darkened room, a
-        usable vent or panel, and the runner's own vent transit.
-        """
-
-        # Deployed operative sensors.
-        for sensor in getattr(self.sim, "field_sensors", ()):  # non-lethal
-            if not self.sim.player_can_see(sensor.position):
-                continue
-            sx, sy = self._world(sensor.position)
-            armed = sensor.armed_in <= 0.0
-            colour = RED if sensor.triggered else (AMBER if armed else MUTED)
-            pygame.draw.circle(self.logical, colour, (sx, sy), 3, 1)
-            pygame.draw.line(self.logical, colour, (sx - 5, sy), (sx - 3, sy))
-            pygame.draw.line(self.logical, colour, (sx + 3, sy), (sx + 5, sy))
-            if armed and not self.reduced_motion:
-                radius = int(6 + 4 * (0.5 + 0.5 * math.sin(self._time * 2.4)))
-                ring = pygame.Surface(LOGICAL_SIZE, pygame.SRCALPHA)
-                pygame.draw.circle(ring, (*colour, 40), (sx, sy), radius, 1)
-                self.logical.blit(ring, (0, 0))
-
-        # Interactable prompt on the nearest usable vent or panel.
-        if hasattr(self.sim, "can_interact") and self.sim.can_interact():
-            target = self.sim.nearest_vent()
-            position = None
-            label = "VENT"
-            if target is not None:
-                from ghostline.generation import tile_center
-
-                position = tile_center(target.tile)
-            else:
-                device = self.sim.nearest_hackable()
-                if device is not None:
-                    position = device.position
-                    label = f"HACK {device.kind.upper()}"
-            if position is not None:
-                sx, sy = self._world(position)
-                pygame.draw.circle(self.logical, CYAN, (sx, sy), 11, 1)
-                width = self.font_small.size(label)[0]
-                self._text(label, sx - width // 2, sy - 24, self.font_small, CYAN)
-
-        # Vent transit: the runner is committed and untargetable.
-        transit = float(getattr(self.sim, "vent_transit", 0.0))
-        if transit > 0.0:
-            sx, sy = self._world(self.sim.player)
-            overlay = pygame.Surface(LOGICAL_SIZE, pygame.SRCALPHA)
-            pygame.draw.circle(overlay, (*CYAN, 70), (sx, sy), 16, 2)
-            self.logical.blit(overlay, (0, 0))
-            self._text("IN DUCT", sx - self.font_small.size("IN DUCT")[0] // 2, sy - 30, self.font_small, CYAN)
-
-    def _draw_v2_darkness(self) -> None:
-        """Draw room darkness below objectives, prompts, sensors, and actors."""
-
-        darkened = getattr(self.sim, "darkened_rooms", {})
-        if darkened:
-            overlay = pygame.Surface(LOGICAL_SIZE, pygame.SRCALPHA)
-            for room in self.sim.level.rooms:
-                if int(room.room_id) not in darkened:
-                    continue
-                left, top = self._world((room.x * TILE_SIZE, room.y * TILE_SIZE))
-                pygame.draw.rect(
-                    overlay,
-                    (10, 18, 38, 96),
-                    (left, top, room.width * TILE_SIZE, room.height * TILE_SIZE),
-                )
-            self.logical.blit(overlay, (0, 0))
 
     def _draw_objectives(self) -> None:
         for terminal in self.sim.level.terminals:
@@ -1491,59 +1276,6 @@ class GhostlineRenderer:
                 pressure=pressure,
             )
         self.logical.blit(layer, (0, 0))
-
-    def _draw_adaptive_mechanics(self) -> None:
-        """Render v2 mechanics without coupling presentation to its types."""
-
-        for door in getattr(self.sim, "security_doors", ()):
-            if not (door.locked or door.warning_remaining > 0.0):
-                continue
-            position = np.asarray(
-                ((door.tile[0] + 0.5) * TILE_SIZE, (door.tile[1] + 0.5) * TILE_SIZE),
-                dtype=np.float32,
-            )
-            sx, sy = self._world(position)
-            warning = door.warning_remaining > 0.0 and not door.locked
-            color = AMBER if warning else VIOLET
-            pygame.draw.rect(self.logical, (4, 8, 13), (sx - 13, sy - 5, 26, 10), border_radius=2)
-            pygame.draw.rect(self.logical, color, (sx - 13, sy - 5, 26, 10), 2, border_radius=2)
-            if warning:
-                phase = 0.5 if self.reduced_flashes else 0.5 + 0.5 * math.sin(self._time * 12.0)
-                pygame.draw.circle(self.logical, (*AMBER, int(30 + 70 * phase)), (sx, sy), 19, 2)
-                self._text("LOCKING", sx - 22, sy - 18, self.font_small, AMBER)
-            else:
-                for offset in (-7, 0, 7):
-                    pygame.draw.line(self.logical, VIOLET, (sx + offset, sy - 4), (sx + offset, sy + 4), 1)
-
-        for decoy in getattr(self.sim, "decoys", ()):
-            sx, sy = self._world(decoy.position)
-            remaining = float(np.clip(decoy.lifetime / 2.0, 0.0, 1.0))
-            radius = 10 if self.reduced_motion else 8 + int((1.0 - remaining) * 16)
-            pygame.draw.circle(self.logical, CYAN, (sx, sy), 4)
-            pygame.draw.circle(self.logical, (*CYAN, int(40 + 80 * remaining)), (sx, sy), radius, 2)
-            pygame.draw.line(self.logical, INK, (sx - 3, sy), (sx + 3, sy), 1)
-
-        for guard in self.sim.level.guards:
-            state = getattr(self.sim, "operative_states", {}).get(guard.guard_id)
-            if state is None or state.aim_progress <= 0.0 or state.aim_target is None:
-                continue
-            start = self._world(guard.position)
-            end = self._world(state.aim_target)
-            progress = float(np.clip(state.aim_progress / 0.7, 0.0, 1.0))
-            pygame.draw.line(self.logical, (*VIOLET, 115), start, end, 1)
-            marker = (
-                int(round(start[0] + (end[0] - start[0]) * progress)),
-                int(round(start[1] + (end[1] - start[1]) * progress)),
-            )
-            pygame.draw.circle(self.logical, VIOLET, marker, 3, 1)
-            self._text("AIM", start[0] - 8, start[1] - 24, self.font_small, VIOLET)
-
-        for projectile in getattr(self.sim, "projectiles", ()):
-            sx, sy = self._world(projectile.position)
-            direction = projectile.velocity / max(1e-6, norm(projectile.velocity))
-            tail = (int(sx - direction[0] * 12), int(sy - direction[1] * 12))
-            pygame.draw.line(self.logical, VIOLET, tail, (sx, sy), 3)
-            pygame.draw.circle(self.logical, INK, (sx, sy), 2)
 
     @staticmethod
     def _vision_color(pressure: float) -> tuple[int, int, int]:
@@ -2055,49 +1787,6 @@ class GhostlineRenderer:
             strike_y = sy - 34 if sy - 34 >= 116 else sy + 39
             self._text("STRIKE", sx - 18, strike_y, self.font_small, cue_color)
 
-    def _crouched_sprite(self, sprite: pygame.Surface) -> pygame.Surface:
-        """Squash the runner so the stealth state reads instantly.
-
-        Crouching changes speed, noise and how fast guards acquire you, so it
-        has to be visible at a glance rather than inferred from the HUD. The
-        silhouette is compressed vertically and kept pixel-exact with a nearest
-        neighbour scale so it stays consistent with the authored art.
-        """
-
-        key = (id(sprite), sprite.get_width(), sprite.get_height())
-        cached = self._crouch_cache.get(key)
-        if cached is not None:
-            return cached
-        width, height = sprite.get_width(), sprite.get_height()
-        squashed = pygame.transform.scale(sprite, (width, max(4, int(height * 0.72))))
-        self._crouch_cache[key] = squashed
-        if len(self._crouch_cache) > 64:
-            self._crouch_cache.clear()
-            self._crouch_cache[key] = squashed
-        return squashed
-
-    def _draw_stealth_state(self) -> None:
-        """Ground marker for crouch and cover.
-
-        Both states are mechanical, not cosmetic: crouching slows guard
-        acquisition and cover speeds trace decay, so the player needs an
-        unambiguous read on whether they currently have them.
-        """
-
-        if not getattr(self.sim, "crouching", False):
-            return
-        sx, sy = self._world(self.sim.player)
-        overlay = pygame.Surface(LOGICAL_SIZE, pygame.SRCALPHA)
-        covered = bool(getattr(self.sim, "in_cover", False))
-        tint = (*GREEN, 70) if covered else (*CYAN, 46)
-        pygame.draw.ellipse(overlay, tint, (sx - 13, sy + 6, 26, 10))
-        pygame.draw.ellipse(overlay, (*(GREEN if covered else CYAN), 150), (sx - 13, sy + 6, 26, 10), 1)
-        self.logical.blit(overlay, (0, 0))
-        if covered:
-            # Two short brackets read as "shielded" without adding a text tag.
-            pygame.draw.line(self.logical, GREEN, (sx - 15, sy + 2), (sx - 15, sy + 9))
-            pygame.draw.line(self.logical, GREEN, (sx + 15, sy + 2), (sx + 15, sy + 9))
-
     def _draw_player(self) -> None:
         sx, sy = self._world(self.sim.player)
         facing = math.atan2(float(self.sim.heading[1]), float(self.sim.heading[0]))
@@ -2110,13 +1799,10 @@ class GhostlineRenderer:
         else:
             state = "normal"
         moving = norm(self.sim.velocity) > 5.0
-        crouching = bool(getattr(self.sim, "crouching", False))
         sprite = self._runner_atlas_sprite(facing, moving, state)
         atlas_sprite = sprite is not None
         if sprite is None:
             sprite = self._actor_sprite("runner", facing, moving, state)
-        if crouching:
-            sprite = self._crouched_sprite(sprite)
         destination = (sx - sprite.get_width() // 2, sy + 13 - sprite.get_height()) if atlas_sprite else (sx - sprite.get_width() // 2, sy - 17)
         if state == "dash" and not self.reduced_motion:
             direction = self.sim.heading
@@ -2579,17 +2265,13 @@ class GhostlineRenderer:
         divider(cursor - 6)
 
         utility = f"PULSE {self.sim.pulse_charges}"
-        if hasattr(self.sim, "decoy_charges"):
-            utility += f"  DECOY {self.sim.decoy_charges}"
-        if hasattr(self.sim, "hack_charges"):
-            utility += f"  HACK {self.sim.hack_charges}"
         self._text("UTILITY", cursor, label_y, self.font_small, MUTED)
         self._text(
             utility,
             cursor,
             value_y,
             hud_small,
-            VIOLET if self.sim.pulse_charges or getattr(self.sim, "decoy_charges", 0) else MUTED,
+            VIOLET if self.sim.pulse_charges else MUTED,
         )
         cursor += max(self.font_small.size("UTILITY")[0], hud_small.size(utility)[0]) + 12
         divider(cursor - 6)
@@ -2667,32 +2349,13 @@ class GhostlineRenderer:
             font=hud_small,
         )
         self._bar(181, 38, 72, 6, self.sim.dash_energy / 100.0, CYAN, "DASH", font=hud_small)
-        if hasattr(self.sim, "hack_charges"):
-            self._text(
-                (
-                    f"P{self.sim.pulse_charges}  "
-                    f"D{self.sim.decoy_charges}  "
-                    f"H{self.sim.hack_charges}"
-                ),
-                270,
-                31,
-                hud_small,
-                CYAN
-                if (
-                    self.sim.pulse_charges
-                    or self.sim.decoy_charges
-                    or self.sim.hack_charges
-                )
-                else MUTED,
-            )
-        else:
-            self._text(
-                f"PULSE {self.sim.pulse_charges}",
-                270,
-                31,
-                hud_small,
-                VIOLET if self.sim.pulse_charges else MUTED,
-            )
+        self._text(
+            f"PULSE {self.sim.pulse_charges}",
+            270,
+            31,
+            hud_small,
+            VIOLET if self.sim.pulse_charges else MUTED,
+        )
 
         seconds = int(math.ceil(self.sim.remaining_seconds))
         clock_color = RED if seconds < 25 else INK
@@ -2867,33 +2530,6 @@ class GhostlineRenderer:
         for center, radius, label, active, color in (
             (TOUCH_DASH_CENTER, TOUCH_DASH_RADIUS, "DASH", bool(state.get("dash")), CYAN),
             (TOUCH_PULSE_CENTER, TOUCH_PULSE_RADIUS, "PULSE", bool(state.get("pulse")), VIOLET),
-            *(
-                (
-                    (
-                        TOUCH_CROUCH_CENTER,
-                        TOUCH_CROUCH_RADIUS,
-                        "SNEAK",
-                        bool(state.get("crouch")),
-                        GREEN,
-                    ),
-                    (
-                        TOUCH_DECOY_CENTER,
-                        TOUCH_DECOY_RADIUS,
-                        "DECOY",
-                        bool(state.get("decoy")),
-                        CYAN,
-                    ),
-                    (
-                        TOUCH_INTERACT_CENTER,
-                        TOUCH_INTERACT_RADIUS,
-                        "USE",
-                        bool(state.get("interact")),
-                        AMBER,
-                    ),
-                )
-                if state.get("show_field_controls")
-                else ()
-            ),
         ):
             pygame.draw.circle(overlay, (*color, 112 if active else 42), center, radius)
             pygame.draw.circle(overlay, (*color, 225 if active else 150), center, radius, 2)
