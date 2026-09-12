@@ -357,7 +357,7 @@ class GameApp:
                 f"CONTRACTS WON   {cleared}/6",
                 f"RUNTIME POLICY  {self.policy_name}",
                 "",
-                "SIX PROCEDURAL CONTRACT TIERS",
+                "SIX PROCEDURAL CONTRACT LEVELS",
                 "AGENT LAB REPLAYS THE VERIFIED RUNNER",
             ],
             footer=f"{self._key_label('menu_up')}/{self._key_label('menu_down')}  NAVIGATE     {self._key_label('confirm')}  SELECT",
@@ -365,7 +365,7 @@ class GameApp:
 
     def _stage_select(self) -> None:
         unlocked = int(self.progression["highest_unlocked_tier"])
-        items = [f"TIER {tier}  {TIERS[tier].name.upper()}{'' if tier <= unlocked else '  [LOCKED]'}" for tier in range(1, 7)]
+        items = [f"LEVEL {tier}  {TIERS[tier].name.upper()}{'' if tier <= unlocked else '  [LOCKED]'}" for tier in range(1, 7)]
         choice = self._menu_events(self._events(), len(items))
         if choice == "back":
             self.state, self.selection = "main", 0
@@ -381,7 +381,7 @@ class GameApp:
             subtitle=f"CLEARANCE {unlocked}/6",
             items=items,
             selected=self.selection,
-            panel_title=f"TIER {spec.number} // {spec.name.upper()}",
+            panel_title=f"LEVEL {spec.number} // {spec.name.upper()}",
             panel=[
                 f"FACILITY   {spec.room_columns}x{spec.room_rows} MODULES",
                 f"QUOTA      {spec.quota} DATA",
@@ -389,11 +389,11 @@ class GameApp:
                 f"WINDOW     {spec.mission_seconds // 60}:{spec.mission_seconds % 60:02d}",
                 f"BEST       {best:06d}" if best else "BEST       —",
             ],
-            footer=f"{self._key_label('back')}  BACK     COMPLETE A CONTRACT TO UNLOCK THE NEXT TIER",
+            footer=f"{self._key_label('back')}  BACK     COMPLETE A CONTRACT TO UNLOCK THE NEXT LEVEL",
         )
 
     def _lab_select(self) -> None:
-        items = [f"WATCH TIER {tier}  {TIERS[tier].name.upper()}" for tier in range(1, 7)]
+        items = [f"WATCH LEVEL {tier}  {TIERS[tier].name.upper()}" for tier in range(1, 7)]
         previous_tier = self.selection + 1
         choice = self._menu_events(self._events(), len(items), horizontal=True)
         selected_tier = self.selection + 1
@@ -449,7 +449,7 @@ class GameApp:
                 self.state = "stage_select"
         spec = TIERS[self.selected_tier]
         self.renderer.draw_screen(
-            title=f"TIER {spec.number}: {spec.name.upper()}",
+            title=f"LEVEL {spec.number}: {spec.name.upper()}",
             subtitle=title,
             body=[
                 directive,
@@ -807,7 +807,7 @@ class GameApp:
             self.state, self.selection = "main", 0
         self.renderer.draw_screen(
             title="PAUSED",
-            subtitle=f"TIER {self.selected_tier} // SEED {self.sim.seed}",
+            subtitle=f"LEVEL {self.selected_tier} // SEED {self.sim.seed}",
             items=items,
             selected=self.selection,
             panel_title="LIVE CONTRACT",
@@ -874,7 +874,7 @@ class GameApp:
             footer = f"{self._key_label('confirm')}  RETRY SAME SEED     {self._key_label('back')}  MAIN MENU"
         self.renderer.draw_screen(
             title=status,
-            subtitle=f"TIER {self.selected_tier} // SEED {self.sim.seed}",
+            subtitle=f"LEVEL {self.selected_tier} // SEED {self.sim.seed}",
             body=body,
             badge="AGENT RUN" if self._debrief_agent else "OPERATIVE RUN",
             panel_title="BENCHMARK RECORD",

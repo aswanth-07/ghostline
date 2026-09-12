@@ -68,13 +68,13 @@ function renderComparison() {
     if (!comparison.matched && runHistory.human && runHistory.agent) {
       root.innerHTML = `
         <strong class="metric-result refused">NOT COMPARED</strong>
-        <span>T${record.tier} / seed ${record.seed}</span>
+        <span>L${record.tier} / seed ${record.seed}</span>
         <span>Run the identical contract to unlock metrics.</span>`;
       continue;
     }
     root.innerHTML = `
       <strong class="metric-result ${record.status}">${record.status === "success" ? "CLEARED" : "FAILED"}</strong>
-      <span>T${record.tier} / seed ${record.seed}</span>
+      <span>L${record.tier} / seed ${record.seed}</span>
       <span>${record.data}/${record.quota} data</span>
       <span>${record.time.toFixed(1)} s</span>
       <span>${record.trace.toFixed(0)}% trace</span>
@@ -176,7 +176,7 @@ function setControlMode(mode) {
     chip.textContent = mode === "agent"
       ? "AGENT CONTROL"
       : mode === "handoff"
-        ? "AGENT HANDOFF"
+        ? "AGENT TAKEOVER"
         : "HUMAN CONTROL";
   }
   const takeover = $("agent-control");
@@ -184,7 +184,7 @@ function setControlMode(mode) {
   if (takeover) takeover.hidden = mode !== "human";
   if (manual) {
     manual.hidden = mode === "human";
-    manual.textContent = mode === "handoff" ? "CANCEL HANDOFF" : "TAKE CONTROL";
+    manual.textContent = mode === "handoff" ? "CANCEL TAKEOVER" : "TAKE CONTROL";
   }
 }
 
@@ -196,7 +196,7 @@ function updateMetrics(serialized) {
     return;
   }
   currentMetrics = metrics;
-  $("live-tier").textContent = `T${metrics.tier}`;
+  $("live-tier").textContent = `L${metrics.tier}`;
   $("live-seed").textContent = formatMetric(metrics.seed);
   $("live-data").textContent = `${metrics.data}/${metrics.quota}`;
   $("live-time").textContent = `${Number(metrics.time).toFixed(1)}s`;
@@ -235,18 +235,18 @@ async function requestAgentControl({ fresh = false } = {}) {
   if (agentActivationPending) return;
   // A Watch Agent request from the menu should demonstrate the selected
   // recurrent policy, not roll directly into its known procedural failure
-  // tail. Live mid-contract handoffs still preserve the active human seed.
+  // tail. Live mid-contract transfers still preserve the active human seed.
   const activeContract = currentMetrics?.status === "active" && Number(currentMetrics?.time || 0) > 0;
   if (!activeContract && seed() === null && $("seed-input")) {
     $("seed-input").value = String(agentShowcaseSeeds[tier()]);
   }
   agentActivationPending = true;
   if (gameReady) setBootState("running");
-  else setBootState("booting", "Initializing the game before agent handoff…");
+  else setBootState("booting", "Initializing the game before agent takeover…");
   queue("focus");
   setControlMode("handoff");
   setPolicyState("loading", "LOADING AGENT 0%");
-  showNotice("Loading the recurrent policy. You can cancel the handoff at any time.", "info");
+  showNotice("Loading the recurrent policy. You can cancel the takeover at any time.", "info");
   try {
     const loaded = await ghostlinePolicy.load();
     if (!agentActivationPending) return;
@@ -268,7 +268,7 @@ async function requestAgentControl({ fresh = false } = {}) {
 async function replayPortfolioAgentRun() {
   if ($("tier-select")) $("tier-select").value = String(portfolioDemo.tier);
   if ($("seed-input")) $("seed-input").value = String(portfolioDemo.seed);
-  showNotice("Loading the exact tier-six contract and checkpoint used by the portfolio recording.", "info");
+  showNotice("Loading the exact level-six contract and checkpoint used by the portfolio recording.", "info");
   setIntelPanel(false, { focus: true, closeTarget: "canvas" });
   await requestAgentControl({ fresh: true });
 }
@@ -278,7 +278,7 @@ function restoreHumanControl() {
   agentActivationPending = false;
   setControlMode("human");
   queue("human");
-  if (cancelledHandoff) showNotice("Agent handoff cancelled. Manual control remains active.", "info");
+  if (cancelledHandoff) showNotice("Agent takeover cancelled. Manual control remains active.", "info");
 }
 
 function maybePublishEmbedReady() {

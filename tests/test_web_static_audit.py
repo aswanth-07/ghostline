@@ -74,15 +74,17 @@ def _minimal_bundle(root: Path, monkeypatch: pytest.MonkeyPatch) -> None:
     )
 
 
-def test_launch_shell_uses_flat_facility_graphics_without_retired_key_art() -> None:
+def test_launch_shell_uses_portfolio_rules_without_retired_key_art() -> None:
     css = (ROOT / "web" / "static" / "ghostline.css").read_text(encoding="utf-8")
     build_source = (ROOT / "scripts" / "build_web.py").read_text(encoding="utf-8")
     assert "ghostline-key-art.webp" not in css
     assert "ghostline-key-art-web.webp" not in build_source
-    assert "repeating-linear-gradient" in css
+    assert "--rule: #424242" in css
+    assert "radial-gradient" not in css
+    assert "repeating-linear-gradient" not in css
 
 
-def test_launch_shell_self_hosts_the_portfolio_typography_and_tokens() -> None:
+def test_launch_shell_uses_the_portfolio_typography_and_semantic_tokens() -> None:
     css = (ROOT / "web" / "static" / "ghostline.css").read_text(encoding="utf-8")
     template = (ROOT / "web" / "ghostline.tmpl").read_text(encoding="utf-8")
 
@@ -93,11 +95,38 @@ def test_launch_shell_self_hosts_the_portfolio_typography_and_tokens() -> None:
         "jetbrains-mono-OFL-1.1.txt",
     ):
         assert (ROOT / "web" / "static" / asset).is_file()
-    assert 'font-family: "Ghostline Manrope"' in css
-    assert "--cyan: #00e5ff" in css
-    assert "--pink: #ff4aa4" in css
-    assert "PLAY THE CONTRACT." in template
+    assert 'font-family: "Ghostline Sans"' in css
+    assert '--display: "Segoe UI Variable", "Segoe UI", "Ghostline Sans"' in css
+    assert '--mono: Consolas, "Ghostline Mono"' in css
+    assert "--link: #59a5fc" in css
+    assert "--comment: #86ff6b" in css
+    assert "--merged: #bc8cff" in css
+    assert "Play the contract." in template
+    assert '<label class="field">LEVEL' in template
+    assert '<small>LEVEL</small><strong id="live-tier">L1</strong>' in template
+    assert "Matched level + seed" in template
+    assert 'class="skip-link" href="#game-frame"' in template
+    assert 'id="game-frame" class="game-frame" tabindex="-1"' in template
+    assert 'id="main-content" class="workspace" tabindex="-1"' in template
+    assert 'class="site-index" aria-label="Page sections"' in template
+    assert 'class="launch-layout"' in template
+    assert 'href="./ghostline.css?v=research-index-1"' in template
+    assert "@media (prefers-reduced-motion: reduce)" in css
+    assert "@media (max-width: 560px)" in css
     assert "aaswanthraj.vercel.app/projects/ghostline" in template
+
+
+def test_visitor_facing_difficulty_copy_uses_levels_without_changing_tier_contracts() -> None:
+    template = (ROOT / "web" / "ghostline.tmpl").read_text(encoding="utf-8")
+    shell = (ROOT / "web" / "static" / "ghostline-shell.mjs").read_text(encoding="utf-8")
+    matched = (ROOT / "web" / "static" / "matched-runs.mjs").read_text(encoding="utf-8")
+
+    assert "same level and seed" in template
+    assert '`L${metrics.tier}`' in shell
+    assert "level-six contract" in shell
+    assert "same level and seed" in matched
+    assert "Matched contract: L${humanIdentity.tier}" in matched
+    assert 'commands.push({ type, tier: tier(), seed: seed(), ...extra })' in shell
 
 
 def test_pygbag_pep723_dependencies_use_browser_repository_names() -> None:

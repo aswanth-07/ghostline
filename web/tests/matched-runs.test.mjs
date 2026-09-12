@@ -24,7 +24,7 @@ test("matched-run snapshot accepts only identical tier and seed", () => {
   });
   assert.equal(snapshot.state, "matched");
   assert.equal(snapshot.matched, true);
-  assert.match(snapshot.message, /T4 \/ seed 81234/);
+  assert.match(snapshot.message, /L4 \/ seed 81234/);
 });
 
 

@@ -130,7 +130,7 @@ def _title(renderer: GhostlineRenderer) -> None:
             "CONTRACTS WON   6/6",
             "RUNTIME POLICY  RECURRENT ONNX POLICY",
             "",
-            "SIX PROCEDURAL CONTRACT TIERS",
+            "SIX PROCEDURAL CONTRACT LEVELS",
             "AGENT LAB REPLAYS THE VERIFIED RUNNER",
         ],
         footer="W/S  NAVIGATE     ENTER  SELECT",
@@ -160,7 +160,7 @@ def _settings(renderer: GhostlineRenderer) -> None:
 
 def _briefing(renderer: GhostlineRenderer) -> None:
     renderer.draw_screen(
-        title="TIER 6: GHOSTLINE",
+        title="LEVEL 6: GHOSTLINE",
         subtitle="The full system is awake.",
         body=[
             "Take the highest-value route you can survive, satisfy the contract, and disappear.",
@@ -228,7 +228,7 @@ def _pause(renderer: GhostlineRenderer) -> None:
         selected=0,
         panel_title="LIVE CONTRACT",
         panel=[
-            "TIER 6 // GHOSTLINE",
+            "LEVEL 6 // GHOSTLINE",
             "DATA 0/8",
             "INTEGRITY 3/3",
             "TRACE 71.0",
@@ -304,12 +304,12 @@ def _agent_lab(renderer: GhostlineRenderer) -> None:
         title="AGENT LAB",
         subtitle="Player-equivalent // deterministic replay",
         items=[
-            "WATCH TIER 1  ORIENTATION",
-            "WATCH TIER 2  SURVEILLANCE",
-            "WATCH TIER 3  PATROL",
-            "WATCH TIER 4  COUNTERMEASURE",
-            "WATCH TIER 5  LOCKDOWN",
-            "WATCH TIER 6  GHOSTLINE",
+            "WATCH LEVEL 1  ORIENTATION",
+            "WATCH LEVEL 2  SURVEILLANCE",
+            "WATCH LEVEL 3  PATROL",
+            "WATCH LEVEL 4  COUNTERMEASURE",
+            "WATCH LEVEL 5  LOCKDOWN",
+            "WATCH LEVEL 6  GHOSTLINE",
         ],
         selected=5,
         badge="RECURRENT ONNX POLICY",

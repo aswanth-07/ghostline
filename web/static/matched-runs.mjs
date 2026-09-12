@@ -17,7 +17,7 @@ export function matchedRunSnapshot(history) {
     return {
       state: "empty",
       matched: false,
-      message: "Complete human and agent runs on the same tier and seed.",
+      message: "Complete human and agent runs on the same level and seed.",
       human,
       agent,
     };
@@ -28,8 +28,8 @@ export function matchedRunSnapshot(history) {
       state: "awaiting",
       matched: false,
       message: present
-        ? `Awaiting the other controller on T${present.tier} / seed ${present.seed}.`
-        : "Awaiting a second run with a valid tier and seed.",
+        ? `Awaiting the other controller on L${present.tier} / seed ${present.seed}.`
+        : "Awaiting a second run with a valid level and seed.",
       human,
       agent,
     };
@@ -38,7 +38,7 @@ export function matchedRunSnapshot(history) {
     return {
       state: "refused",
       matched: false,
-      message: "Comparison refused: one run has no valid tier-and-seed identity.",
+      message: "Comparison refused: one run has no valid level-and-seed identity.",
       human,
       agent,
     };
@@ -47,7 +47,7 @@ export function matchedRunSnapshot(history) {
     return {
       state: "refused",
       matched: false,
-      message: `Comparison refused: human T${humanIdentity.tier} / ${humanIdentity.seed} and agent T${agentIdentity.tier} / ${agentIdentity.seed} are different contracts.`,
+      message: `Comparison refused: human L${humanIdentity.tier} / ${humanIdentity.seed} and agent L${agentIdentity.tier} / ${agentIdentity.seed} are different contracts.`,
       human,
       agent,
     };
@@ -55,7 +55,7 @@ export function matchedRunSnapshot(history) {
   return {
     state: "matched",
     matched: true,
-    message: `Matched contract: T${humanIdentity.tier} / seed ${humanIdentity.seed}.`,
+    message: `Matched contract: L${humanIdentity.tier} / seed ${humanIdentity.seed}.`,
     human,
     agent,
   };

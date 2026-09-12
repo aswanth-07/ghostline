@@ -156,15 +156,36 @@ The standalone shell also exposes an `INTEL PANEL` toggle. Wide-screen users
 can collapse the full launcher/telemetry column and give the 16:9 playfield the
 workspace; live telemetry and matched-run analysis remain opt-in disclosures.
 Entering a contract now collapses that rail automatically, expanding the game
-from the setup layout while leaving `SHOW INTEL` available for tier, seed, and
-matched-run analysis. The launcher uses the portfolio's neutral-black surfaces,
-58 px grid, cyan/magenta interaction tokens, and self-hosted Manrope/JetBrains
-Mono Latin variable fonts; their SIL OFL 1.1 texts ship with the static bundle.
-The toggle carries `aria-controls`/`aria-expanded`, restores focus on close,
-and leaves the deterministic simulation and model interface untouched. Rapid
-5 Hz raw telemetry is deliberately not an `aria-live` region; controller and
-run-state changes use the lower-frequency status notice so assistive technology
-is not flooded with continuously changing numbers.
+from the setup layout while leaving `SHOW INTEL` available for level, seed, and
+matched-run analysis. The standalone shell follows the portfolio's
+research-index system rather than a neon dashboard treatment. A fixed project
+rail at desktop widths gives the game, run setup, and case study a numbered
+index; narrower screens replace it with a compact release header, while the
+game controls continue to open the same modal run-setup drawer. Surfaces stay
+pure black with sharp `#424242` rules. Segoe UI and Consolas lead the
+portfolio-matched typography stack, with the already self-hosted Manrope and
+JetBrains Mono files as portable fallbacks. Blue identifies links and focus,
+green identifies verified/ready states, purple identifies policy control,
+yellow identifies warnings, and red is reserved for the active human-control
+marker and launch rule. The stylesheet URL is release-keyed so an updated shell
+cannot be paired with a stale cached theme.
+
+The launch gate is an editorial release record: it names the immutable
+`GhostlineEnv-v1` contract, WebAssembly runtime, recurrent ONNX policy,
+36-action interface, and matched level/seed evaluation before asking for the
+audio and keyboard gesture. The game remains the dominant artifact once
+entered, and the project rail stays visible without imitating editor chrome.
+The intel toggle carries `aria-controls`/`aria-expanded`, restores focus on
+close, and leaves the deterministic simulation and model interface untouched.
+Rapid 5 Hz raw telemetry is deliberately not an `aria-live` region;
+controller and run-state changes use the lower-frequency status notice so
+assistive technology is not flooded with continuously changing numbers.
+
+Visitor-facing difficulty language uses **Level 1–6** throughout the launcher,
+menus, HUD, telemetry, and comparison copy. The underlying compatibility
+contract deliberately retains `tier` in command-line flags, saved progression,
+runtime selectors, and bridge payloads, so the clearer label does not invalidate
+existing URLs, recordings, integrations, or deterministic run identities.
 
 ## Build commands
 
@@ -264,9 +285,9 @@ Start-Process "$env:ProgramFiles\Google\Chrome\Application\chrome.exe" "http://l
 Verify in Chrome DevTools:
 
 1. Loading progress is readable, the audio-authorization gate works, and `FOCUS GAME` restores keyboard input.
-2. WASD, Shift, Space, Escape, restart, menus, fullscreen, tier selection, and deterministic seed selection work.
-3. `AGENT TAKEOVER` continues an active human mission on its exact seed, updates backend/latency telemetry, and `TAKE CONTROL` returns the same mission to the player. From the menu or `autoplay=1`, a blank seed is pinned to the selected tier's disclosed passing validation showcase so the first Watch Agent view is representative rather than a random failure-tail sample.
-4. Complete human and agent runs on an identical tier/seed and confirm the matched cards appear; then use a different seed and confirm comparison is explicitly refused.
+2. WASD, Shift, Space, Escape, restart, menus, fullscreen, level selection, and deterministic seed selection work.
+3. `AGENT TAKEOVER` continues an active human mission on its exact seed, updates backend/latency telemetry, and `TAKE CONTROL` returns the same mission to the player. From the menu or `autoplay=1`, a blank seed is pinned to the selected level's disclosed passing validation showcase so the first Watch Agent view is representative rather than a random failure-tail sample.
+4. Complete human and agent runs on an identical level/seed and confirm the matched cards appear; then use a different seed and confirm comparison is explicitly refused.
 5. Disable WebGPU and confirm WASM fallback; block the model request and confirm human-only fallback. Also interrupt a live inference request and confirm action zero followed by manual-control restoration and a `hybrid` run label.
 6. Use the Network panel with cache disabled to record usable-start time and transfer size. Use Performance for 60 FPS and ten policy calls per second.
 7. Test both the standalone URL and the portfolio iframe at desktop widths. Keyboard input must remain opt-in through the focus button.

@@ -2213,7 +2213,7 @@ class GhostlineRenderer:
         def divider(x: int) -> None:
             pygame.draw.line(self.logical, (28, 48, 56), (x, 6), (x, band_height - 7))
 
-        self._text(f"T{self.sim.tier}", cursor, label_y, self.font_small, MUTED)
+        self._text(f"L{self.sim.tier}", cursor, label_y, self.font_small, MUTED)
         self._text(TIERS[self.sim.tier].name.upper(), cursor, value_y, hud_small, CYAN)
         cursor += max(hud_small.size(TIERS[self.sim.tier].name.upper())[0], 20) + 12
         divider(cursor - 6)
@@ -2335,7 +2335,7 @@ class GhostlineRenderer:
 
         phase = "EXTRACT" if self.sim.quota_met else "ACQUIRE"
         phase_color = GREEN if self.sim.quota_met else AMBER
-        self._text(f"T{self.sim.tier}  {TIERS[self.sim.tier].name.upper()}", 17, 11, hud_small, CYAN)
+        self._text(f"L{self.sim.tier}  {TIERS[self.sim.tier].name.upper()}", 17, 11, hud_small, CYAN)
         self._text(f"{phase}  {self.sim.data}/{self.sim.level.quota}", 176, 10, hud_font, phase_color)
         self._pips(17, 40, self.sim.integrity, 3, GREEN, label="HP", font=hud_small)
         self._bar(

@@ -366,7 +366,7 @@ def test_touch_hud_uses_a_concise_phone_readable_status_strip(monkeypatch) -> No
     renderer._draw_hud(None, touch_layout=True)
     renderer.close()
 
-    assert any(label.startswith("T2  SURVEILLANCE") for label in labels)
+    assert any(label.startswith("L2  SURVEILLANCE") for label in labels)
     assert any(label.startswith("ACQUIRE  ") for label in labels)
     assert "HP" in labels
     assert "TRACE" in labels
@@ -382,7 +382,7 @@ def test_menu_uses_flat_gameplay_schematic_without_loading_key_art(monkeypatch) 
 
     renderer = GhostlineRenderer(GhostlineSimulation(seed=7, tier=1), visible=False)
     title_frame = renderer.draw_screen(title="GHOSTLINE", items=["PLAY", "QUIT"], return_array=True)
-    briefing_frame = renderer.draw_screen(title="TIER 4 // COUNTERMEASURE", items=["DEPLOY"], return_array=True)
+    briefing_frame = renderer.draw_screen(title="LEVEL 4 // COUNTERMEASURE", items=["DEPLOY"], return_array=True)
     renderer.close()
 
     assert not hasattr(renderer, "_key_art")

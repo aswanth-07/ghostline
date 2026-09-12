@@ -1,3 +1,4 @@
+<!doctype html>
 <html lang="en"><script src="./runtime/pygbag-0.9.3/pythons.js" type="module" id="site" data-python="python{{cookiecutter.PYBUILD}}" data-LINES="{{cookiecutter.LINES}}" data-COLUMNS="{{cookiecutter.COLUMNS}}" data-os="snd,gui" async defer>#<!--
 
 import asyncio
@@ -83,7 +84,7 @@ asyncio.run(custom_site())
       document.documentElement.dataset.embed = embedded ? "true" : "false";
     })();
   </script>
-  <link rel="stylesheet" href="./ghostline.css">
+  <link rel="stylesheet" href="./ghostline.css?v=research-index-1">
   <script type="application/javascript">
     config = {
       xtermjs: "{{cookiecutter.xtermjs}}",
@@ -106,46 +107,74 @@ asyncio.run(custom_site())
   <script src="./vendor/browserfs-1.4.3.min.js"></script>
 </head>
 <body data-control="human" data-boot="booting" data-embed="false">
+  <a class="skip-link" href="#game-frame">Skip to playable contract</a>
   <div id="orientation-gate" class="orientation-gate" role="status" aria-live="polite">
     <div class="orientation-card">
       <span class="phone-rotate" aria-hidden="true"></span>
-      <strong>ROTATE TO LANDSCAPE</strong>
-      <p>Ghostline keeps its full tactical field of view instead of shrinking text and controls into portrait mode.</p>
+      <span class="orientation-index">DISPLAY / 01</span>
+      <strong>Rotate to landscape.</strong>
+      <p>The full tactical field of view is part of the player-equivalent contract. Landscape keeps the scene and controls legible.</p>
     </div>
   </div>
-  <header class="site-header">
+  <header class="site-header" aria-label="Ghostline project index">
     <a class="brand" href="https://aaswanthraj.vercel.app/projects/ghostline" target="_blank" rel="noopener" aria-label="Open the Ghostline engineering case study">
-      <div class="brand-mark" aria-hidden="true">GL</div>
-      <div class="brand-copy"><strong>GHOSTLINE</strong><span>A ASWANTH RAJ / INTERACTIVE ML PROJECT</span></div>
+      <span class="brand-mark" aria-hidden="true">PROJECT / 01</span>
+      <span class="brand-copy"><strong>Ghostline</strong><span>Procedural RL system</span></span>
     </a>
+    <nav class="site-index" aria-label="Page sections">
+      <a href="#playfield"><span>01</span><strong>Playfield</strong></a>
+      <a href="#agent-lab-panel"><span>02</span><strong>Run setup</strong></a>
+      <a class="portfolio-link" href="https://aaswanthraj.vercel.app/projects/ghostline" target="_blank" rel="noopener"><span>03</span><strong>Case study ↗</strong></a>
+    </nav>
     <div class="header-status" aria-live="polite">
+      <small>LIVE STATUS</small>
       <span id="control-chip" class="chip">HUMAN CONTROL</span>
       <span id="policy-chip" class="chip" data-state="idle">CHECKING AGENT</span>
-      <a class="portfolio-link" href="https://aaswanthraj.vercel.app/projects/ghostline" target="_blank" rel="noopener">CASE STUDY <span aria-hidden="true">↗</span></a>
+    </div>
+    <div class="header-context" aria-label="Release summary">
+      <p>PLAYER-EQUIVALENT POLICY</p>
+      <span>STATIC PYGBAG / ONNX</span>
+      <span>GHOSTLINEENV-V1</span>
     </div>
   </header>
 
-  <main class="workspace">
-    <section class="game-column" aria-label="Ghostline game">
-      <div id="game-frame" class="game-frame frame-corners">
+  <main id="main-content" class="workspace" tabindex="-1">
+    <section id="playfield" class="game-column" aria-labelledby="playfield-title">
+      <header class="workspace-intro">
+        <div>
+          <p>01 / Live environment</p>
+          <h1 id="playfield-title">Play. Observe. Compare.</h1>
+        </div>
+        <p>One deterministic simulation. The same visible state for human and recurrent policy control.</p>
+      </header>
+      <div id="game-frame" class="game-frame" tabindex="-1">
         <canvas class="emscripten" id="canvas" width="1" height="1" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
         <canvas class="emscripten" id="canvas3d" width="{{cookiecutter.width}}" height="{{cookiecutter.height}}" tabindex="-1" oncontextmenu="event.preventDefault()" hidden></canvas>
 
         <div id="launch-gate" class="launch-gate" role="dialog" aria-modal="true" aria-labelledby="launch-title">
-          <div class="launch-card">
-            <span class="launch-kicker">LIVE CONTRACT / PLAYER-EQUIVALENT POLICY</span>
-            <h1 id="launch-title">PLAY THE CONTRACT.<br><em>OR WATCH THE POLICY.</em></h1>
-            <p id="launch-copy">A deterministic procedural stealth game and recurrent agent running together in your browser.</p>
-            <div id="transfer">
-              <div id="status">Downloading browser runtime...</div>
-              <progress value="0" max="100" id="progress"></progress>
+          <div class="launch-layout">
+            <div class="launch-card">
+              <span class="launch-kicker">INTERACTIVE RELEASE / GHOSTLINEENV-V1</span>
+              <h2 id="launch-title">Play the contract.<br><em>Or watch the policy.</em></h2>
+              <p id="launch-copy">A deterministic procedural stealth game and recurrent agent running together in your browser.</p>
+              <div id="transfer">
+                <div id="status">Downloading browser runtime...</div>
+                <progress value="0" max="100" id="progress"></progress>
+              </div>
+              <button id="focus-game" class="primary" type="button" hidden>ENTER FACILITY</button>
             </div>
-            <button id="focus-game" class="primary" type="button" hidden>ENTER FACILITY</button>
+            <dl class="launch-index" aria-label="Release contract">
+              <div><dt>01 / Runtime</dt><dd>Python / WebAssembly</dd></div>
+              <div><dt>02 / Policy</dt><dd>Recurrent GRU / ONNX</dd></div>
+              <div><dt>03 / Interface</dt><dd>36 player actions</dd></div>
+              <div><dt>04 / Evaluation</dt><dd>Matched level + seed</dd></div>
+            </dl>
           </div>
         </div>
       </div>
 
       <div class="toolbar" aria-label="Game controls">
+        <span class="toolbar-label">RUNTIME CONTROLS</span>
         <button id="focus-control" type="button">FOCUS GAME</button>
         <button id="fullscreen-control" type="button">FULLSCREEN</button>
         <button id="intel-panel-control" type="button" aria-controls="agent-lab-panel" aria-expanded="true">HIDE INTEL</button>
@@ -153,18 +182,18 @@ asyncio.run(custom_site())
         <button id="human-control" class="primary" type="button" hidden>TAKE CONTROL</button>
         <button id="agent-control" class="agent" type="button">AGENT TAKEOVER</button>
       </div>
-      <p class="web-help"><kbd>WASD</kbd> move <span>/</span> <kbd>SHIFT</kbd> dash <span>/</span> <kbd>SPACE</kbd> pulse <span>/</span> <kbd>ESC</kbd> pause. Touch devices get an on-screen stick plus the same dash, pulse, and pause controls.</p>
+      <p class="web-help"><span>INPUT /</span> <kbd>WASD</kbd> move <i aria-hidden="true">|</i> <kbd>SHIFT</kbd> dash <i aria-hidden="true">|</i> <kbd>SPACE</kbd> pulse <i aria-hidden="true">|</i> <kbd>ESC</kbd> pause. Touch devices get an on-screen stick plus the same dash, pulse, and pause controls.</p>
     </section>
 
     <aside id="agent-lab-panel" class="side-panel" aria-label="Live Agent Lab controls">
       <div class="mobile-lab-header">
-        <strong>RUN CONTROL</strong>
+        <strong>02 / RUN SETUP</strong>
         <button id="mobile-lab-close" type="button" aria-label="Close run controls">CLOSE</button>
       </div>
       <section class="panel">
-        <h2>CONTRACT LAUNCHER</h2>
+        <header class="panel-heading"><span>02</span><div><small>RUN SETUP</small><h2>Contract launcher</h2></div></header>
         <div class="contract-grid">
-          <label class="field">TIER
+          <label class="field">LEVEL
             <select id="tier-select">
               <option value="1">01 // ORIENTATION</option>
               <option value="2">02 // SURVEILLANCE</option>
@@ -183,9 +212,9 @@ asyncio.run(custom_site())
       </section>
 
       <details class="panel panel-disclosure telemetry-panel" open>
-        <summary><span>LIVE TELEMETRY</span><small>RUN SIGNAL</small></summary>
+        <summary><span><b>03</b> LIVE TELEMETRY</span><small>RUN SIGNAL</small></summary>
         <div class="live-grid">
-          <div><small>TIER</small><strong id="live-tier">T1</strong></div>
+          <div><small>LEVEL</small><strong id="live-tier">L1</strong></div>
           <div><small>SEED</small><strong id="live-seed">—</strong></div>
           <div><small>DATA</small><strong id="live-data">0/0</strong></div>
           <div><small>TIME</small><strong id="live-time">0.0s</strong></div>
@@ -198,8 +227,8 @@ asyncio.run(custom_site())
       </details>
 
       <details class="panel panel-disclosure matched-panel">
-        <summary><span>MATCHED RUNS</span><small>OPTIONAL ANALYSIS</small></summary>
-        <p id="match-status" class="match-status" data-state="empty">Complete human and agent runs on the same tier and seed.</p>
+        <summary><span><b>04</b> MATCHED RUNS</span><small>OPTIONAL ANALYSIS</small></summary>
+        <p id="match-status" class="match-status" data-state="empty">Complete human and agent runs on the same level and seed.</p>
         <div class="comparison">
           <article class="metric-card"><h3>HUMAN</h3><div id="human-metrics" class="metric-values"></div></article>
           <article class="metric-card"><h3>AGENT</h3><div id="agent-metrics" class="metric-values"></div></article>
@@ -209,7 +238,8 @@ asyncio.run(custom_site())
   </main>
 
   <footer class="site-legal">
-    <span>GHOSTLINE 1.0 // STATIC PLAYER</span>
+    <span>GHOSTLINE 1.0 / STATIC PLAYER</span>
+    <span class="legal-status">RELEASED CONTRACT</span>
     <a href="./LICENSE" target="_blank" rel="license noopener">MIT LICENSE</a>
     <a href="./THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener">THIRD-PARTY NOTICES</a>
   </footer>
