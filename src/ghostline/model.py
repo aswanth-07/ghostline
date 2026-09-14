@@ -12,15 +12,10 @@ OBSERVATION_CONTRACT = "GhostlineEnv-v2"
 
 
 def current_environment_fingerprint() -> str:
-    """Return the frozen player/simulation contract fingerprint.
+    """Read the shared source fingerprint without importing training machinery."""
+    from ghostline.onnx_contract import environment_fingerprint
 
-    The import is intentionally delayed: ``imitation`` owns the source-file
-    fingerprint and imports this module for the network implementation.
-    """
-
-    from ghostline.imitation import training_environment_fingerprint
-
-    return training_environment_fingerprint()
+    return environment_fingerprint()
 
 
 def checkpoint_environment_fingerprint(payload: object) -> str | None:

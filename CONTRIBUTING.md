@@ -1,10 +1,9 @@
 # Contributing
 
-This is a personal portfolio project, so it is not looking for feature work.
-Bug reports, reproducible failures and questions about the method are welcome —
-open an issue.
-
-If you do want to send a change, the constraints below are the ones that matter.
+Ghostline is a released single-player game and research benchmark. Bug reports,
+reproducible failures, documentation fixes, and questions about the method are
+welcome. Open an issue with the level, map seed, platform, and steps to reproduce.
+Discuss feature proposals before implementation so they fit the release contract.
 
 ## Setup
 
@@ -17,13 +16,15 @@ python -m pytest -q
 Always install through `requirements.lock`. CI runs `pip check`, and an
 unpinned resolve will pass locally and fail there.
 
-## The one rule that is not negotiable
+## Preserve the released contract
 
-**Do not edit `simulation.py`, `generation.py`, `types.py` or `config.py`.**
+The fingerprint covers six modules under `src/ghostline/`: `config.py`, `env.py`,
+`generation.py`, `policies.py`, `simulation.py`, and `types.py`. Preserve them
+when making presentation or documentation changes.
 
-Those four files are hashed together into the environment fingerprint
+Those six files are hashed together into the environment fingerprint
 `521c449a8bd9a540977a918f5b094dd3aeff44cc579a55f75e22a74bab20e129`. Changing a
-single byte — including a line ending — invalidates the trained checkpoint, the
+source byte, apart from normalized line endings, invalidates the trained checkpoint, the
 3,000-episode benchmark, the ONNX parity record and the throughput report, all
 of which are bound to that hash. `verify_release_evidence.py` will fail, and it
 is meant to.
@@ -34,7 +35,7 @@ version with its own fingerprint and its own evidence, not in an edit to these.
 The same reasoning applies to the strings inside published artifacts. Those
 records say `GhostlineEnv-v2` where the public id is `GhostlineEnv-v1`; both
 name the same environment and the label is historical. Rewriting it inside a
-signed artifact destroys the evidence it authenticates.
+hash-bound artifact destroys the evidence it authenticates.
 
 ## Before opening a pull request
 
@@ -49,7 +50,7 @@ the captures. The capture harness declares its own copy of each screen; a
 regression pins it against the live menus, because that duplication has drifted
 before and once hid real UI clipping from every tracked screenshot.
 
-## What good looks like here
+## Review expectations
 
 - **Measure before claiming.** The repository publishes its rejected INT8
   export and its rejected PPO pilot next to the accepted result. A change that

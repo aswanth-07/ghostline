@@ -456,9 +456,6 @@ def test_public_cli_and_extras_match_release_contract() -> None:
     for page in sorted(audit.DOCUMENTATION_ALLOWED):
         assert f"include {page}" in source_manifest
         assert (ROOT / page).is_file()
-    assert "exclude tests/test_cli.py" in source_manifest
-    assert "exclude tests/test_env.py" in source_manifest
-    assert "exclude tests/test_training.py" in source_manifest
 
 
 def test_workflows_use_locked_installs_and_release_smoke() -> None:

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from contextlib import contextmanager
+from contextlib import ExitStack, contextmanager
 from importlib.resources import as_file, files
 from pathlib import Path
 import sys
@@ -21,13 +21,17 @@ def runtime_asset_path(relative: str | Path) -> Iterator[Path | None]:
 
     relative = Path(relative)
     packaged = files("ghostline").joinpath("_assets", *relative.parts)
-    try:
-        if packaged.is_file():
-            with as_file(packaged) as resolved:
-                yield Path(resolved)
-                return
-    except (FileNotFoundError, ModuleNotFoundError, OSError):
-        pass
+    with ExitStack() as stack:
+        try:
+            resolved = stack.enter_context(as_file(packaged)) if packaged.is_file() else None
+        except (FileNotFoundError, ModuleNotFoundError, OSError):
+            # An unavailable package resource can still exist in a source checkout.
+            resolved = None
+        if resolved is not None:
+            # Keep caller exceptions outside the lookup fallback: yielding again
+            # would mask an asset consumer's OSError with a context-manager error.
+            yield Path(resolved)
+            return
 
     candidates: list[Path] = []
     bundle_root = getattr(sys, "_MEIPASS", None)

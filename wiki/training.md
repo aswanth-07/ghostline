@@ -9,9 +9,9 @@ status: active
 ## The result
 
 The shipped 384-unit recurrent runner passed a one-time held-out audit over 500
-unseen contracts per tier, 3,000 episodes in total:
+unseen contracts per level, 3,000 episodes in total:
 
-| Tier | Success | Wilson 95% |
+| Level | Success | Wilson 95% |
 |---|---:|---|
 | 1 | 99.8% | 98.9 – 100.0 |
 | 2 | 100.0% | 99.2 – 100.0 |
@@ -40,7 +40,7 @@ The teacher sees the same public observation and the same action mask as the
 learner. It is not privileged, and no human demonstrations were used.
 
 **PPO was tried and rejected.** A pilot ran to 153,600 steps and scored a
-worst-tier 84% against the matched rollback's 90%, with deterministic action
+worst-level 84% against the matched rollback's 90%, with deterministic action
 agreement of 0.85. It is published unmodified as
 `benchmarks/neural/ppo-pilot-rejected.json` with
 `status: rejected_and_not_resumed`. PPO, GAE and RND are implemented and tested;
@@ -57,7 +57,7 @@ Three ranges that cannot collide by construction, enforced in `seeds.py`:
 | 2,000,000+ | final test only |
 
 `final_test_seed` refuses any start below 2,000,000. Validation seeds are
-derived per tier and cannot leave their reserved window.
+derived per level and cannot leave their reserved window.
 
 ## The one-way final-test ledger
 
@@ -69,7 +69,7 @@ exception retires the slice as `aborted_retired` instead — a crashed audit is
 never rerun on the same seeds.
 
 Before a single episode runs, the reservation's environment fingerprint,
-policy kind, episode count and tier set must all match. Afterwards the
+policy kind, episode count and level set must all match. Afterwards the
 fingerprint and checkpoint hash are re-checked, and drift retires the slice.
 
 The ledger's honest content matters as much as its mechanism. Of seven slices,
@@ -79,8 +79,8 @@ one that passed a since-replaced acceptance curve.
 
 ## Selection
 
-Tier promotion requires two consecutive held-out passes. Checkpoint selection
-orders by worst-tier validation success, then tier-6 success, then damage,
+Level promotion requires two consecutive held-out passes. Checkpoint selection
+orders by worst-level validation success, then level-6 success, then damage,
 trace, path efficiency, completion time and inference cost.
 
 No final-test slice takes part in architecture, reward, curriculum or
@@ -96,8 +96,8 @@ evidence for the shipped policy.
 
 ## Acceptance
 
-- at least 95% success on tiers 1–5 and 85% on tier 6;
-- 500 unseen seeds per tier;
+- at least 95% success on levels 1–5 and 85% on level 6;
+- 500 unseen seeds per level;
 - Wilson 95% intervals;
 - failure taxonomy, time, trace, damage, optional data and path efficiency;
 - PyTorch/ONNX deterministic action parity over at least 1,000 recurrent
@@ -108,10 +108,10 @@ evidence for the shipped policy.
 Stated plainly because the numbers above are strong enough not to need help:
 
 - **Success is not stealth.** Median maximum trace is saturated at 100.0 on
-  tiers 3, 4 and 6. The policy routinely pins the trace meter and extracts
+  levels 3, 4 and 6. The policy routinely pins the trace meter and extracts
   anyway. It solves the contract; it does not play quietly.
 - **Path efficiency is 0.58–0.79**, so routes are competent rather than optimal,
-  and tier-6 optional-data collection is 0.258.
+  and level-6 optional-data collection is 0.258.
 - **The training corpus figures are prose.** The transition counts above come
   from the model card and lineage CSV; the intermediate DAgger rounds have no
   per-episode artifact in the repository. The final result is fully reproducible
@@ -120,7 +120,7 @@ Stated plainly because the numbers above are strong enough not to need help:
   decisions** — DAgger rounds 3 and 4 and the consolidated candidate. The
   confirmation windows at 6700/6900 and the 8M final test are disjoint from it,
   but it is a multiple-comparisons foothold.
-- **A single held-out number per tier.** The slice is consumed, so there is no
+- **A single held-out number per level.** The slice is consumed, so there is no
   repeated-run variance and no seed-of-training variance. The Wilson intervals
   are episode-sampling intervals only.
 - **No superhuman claim.** That would need a matched-seed human cohort under a

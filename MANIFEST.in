@@ -6,6 +6,8 @@
 include LICENSE
 include THIRD_PARTY_NOTICES.md
 include README.md
+include CONTRIBUTING.md
+include CHANGELOG.md
 include requirements.lock
 include vercel.json
 include models/model-card.md
@@ -25,15 +27,9 @@ include wiki/setup.md
 include wiki/assets.md
 include wiki/web-deployment.md
 
-# Include the runnable Ghostline suite, but not the three frozen legacy
-# prototype suites whose neon_arena package is intentionally absent below.
+# Ship the active game tests. Keep the retired prototype out if a stale local
+# build directory still contains its source.
 recursive-include tests *.py
-exclude tests/test_cli.py
-exclude tests/test_env.py
-exclude tests/test_training.py
-
-# The legacy prototype remains Git-history evidence, not public Ghostline
-# distribution source.
 prune src/neon_arena
 
 global-exclude __pycache__ *.py[cod] .DS_Store Thumbs.db

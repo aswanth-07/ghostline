@@ -1,170 +1,190 @@
 # Ghostline
 
-**A procedural stealth game, and a reinforcement-learning benchmark where the
-agent plays by exactly the rules a human does.**
+**Steal the data. Outsmart security. Make your escape.**
 
-[**▶ Play it in your browser**](https://ghostline-rho.vercel.app) · no install,
-no sign-in · press `AGENT TAKEOVER` to hand the same contract to the trained
-policy
+Ghostline is a single-player, pixel-art stealth game set in procedurally generated
+facilities. Slip past cameras, evade patrols, and download enough data to open
+an extraction route. Every mission is a race between your next move, the clock,
+and a rising trace signal.
 
-[![CI](https://github.com/aswanth-07/ghostline/actions/workflows/ci.yml/badge.svg)](https://github.com/aswanth-07/ghostline/actions/workflows/ci.yml)
+[**Play in your browser**](https://ghostline-rho.vercel.app) ·
+[How to play](#how-to-play) · [The six levels](#six-levels-of-escalating-security) ·
+[Run locally](#play-locally) · [Under the hood](#under-the-hood)
+
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
-[![Python](https://img.shields.io/badge/python-3.12%20%7C%203.13%20%7C%203.14-blue.svg)](pyproject.toml)
+[![Python](https://img.shields.io/badge/Python-3.12–3.14-blue.svg)](pyproject.toml)
 
-![Tier-six contract, played by the trained policy](assets/screenshots/ghostline-demo.gif)
+[![Ghostline gameplay: the trained runner steals data and escapes a Level 6 facility](assets/screenshots/ghostline-demo.gif)](videos/ghostline-demo.mp4)
 
-Steal enough data to satisfy a contract, manage a rising trace signature, and
-extract before security closes your route. Six procedurally generated tiers,
-cameras, patrolling guards, and late-tier response drones.
+*Gameplay from Level 6 — Ghostline, played by the trained AI runner.
+[Watch the full recording](videos/ghostline-demo.mp4) or
+[view a still frame](assets/screenshots/gameplay-stealth-v3.png).*
 
----
+## How to play
 
-## The result
+1. **Infiltrate.** Explore the facility and locate the amber data terminals.
+2. **Download.** Stand near a terminal to hack it automatically. Collect the
+   mission's data quota; extra data is a score opportunity if you can afford the risk.
+3. **Evade.** Break line of sight to cool your trace. Dash out of danger, or use
+   a limited disruption pulse to disable electronics and jam guard radios.
+4. **Extract.** Once you have enough data, reach the green extraction relay
+   before the timer expires or your integrity runs out.
 
-A 384-unit recurrent policy, evaluated once on **3,000 contracts it had never
-seen**:
+| Control | Action |
+|---|---|
+| `WASD` | Move |
+| `Shift` | Dash — fast, noisy, and limited by energy |
+| `Space` | Disruption pulse — available from Level 2 |
+| `Esc` | Pause |
 
-| Tier | Success | Wilson 95% | Median time |
-|---|---:|---|---:|
-| 1 | 99.8% | 98.9 – 100.0 | 13.0 s |
-| 2 | 100.0% | 99.2 – 100.0 | 12.7 s |
-| 3 | 96.4% | 94.4 – 97.7 | 21.9 s |
-| 4 | 98.0% | 96.4 – 98.9 | 23.2 s |
-| 5 | 99.0% | 97.7 – 99.6 | 27.9 s |
-| 6 | **89.6%** | 86.6 – 92.0 | 31.1 s |
+Touch play provides an on-screen stick and dash, pulse, and pause buttons.
+The local player also offers remappable controls, contrast options, reduced
+motion, sound captions, and an optional timer assist.
 
-500 episodes per tier. Every episode's seed, action hash, reward decomposition
-and failure reason is in
-[`benchmarks/neural/champion-final-8m-500.episodes.csv`](benchmarks/neural/champion-final-8m-500.episodes.csv).
+Want to study another route? Open **Agent Lab** locally or select
+**Agent Takeover** in the browser. The trained runner uses the same game rules
+and player-visible information. You can take control again from the browser toolbar.
 
-**The evaluation could only be run once.** Final-test seeds live in a one-way
-ledger: the evaluator takes an exclusive lock, and the slice is marked
-`consumed` or `aborted_retired` afterwards with no reopen path. Of the seven
-slices in [`benchmarks/final-test-slices.json`](benchmarks/final-test-slices.json),
-one carries this result — the other six are retired, including three failed
-teacher audits. The failures are published alongside the success.
+## Six levels of escalating security
 
-## What makes it a fair benchmark
+Each level introduces a harder mission. A **level** sets the security and quota;
+a **map seed** identifies a particular facility layout. Replay a seed to practice
+its route, or leave the browser seed blank for a fresh mission.
 
-The interesting constraint is that **the policy gets no privileged information**.
-It reads the same structured observation a player reads off the HUD, the minimap
-and the facility telemetry — no hidden enemy coordinates, no renderer-only
-state. Human and agent drive the same 60 Hz simulation through the same 36
-semantic actions.
+| Level | Mission | What you face | Data quota | Time limit |
+|---|---|---|---:|---:|
+| **1** | **Orientation** | Learn to download and extract, with no cameras or guards | 3 | 1:55 |
+| **2** | **Surveillance** | Sweeping cameras and your first disruption pulse | 4 | 2:15 |
+| **3** | **Patrol** | Guards that investigate noise and share alerts | 5 | 2:40 |
+| **4** | **Countermeasure** | A larger facility, more cameras, and more pulse charges | 6 | 3:00 |
+| **5** | **Lockdown** | Response drones deploy when trace reaches its maximum | 7 | 3:25 |
+| **6** | **Ghostline** | Dense security and drones that deploy at a lower trace threshold | 8 | 3:45 |
 
-That is what makes the two comparable at all, and it is enforced by tests rather
-than by intent.
+In the local game's **Play Levels** menu, a successful escape unlocks the next
+level. The browser mission selector and Agent Lab let you explore all six.
+These are replayable procedural missions, rather than six fixed maps.
 
-## How it was trained
+## Play locally
 
-Behavior cloning from an observation-only teacher, four DAgger recovery rounds
-on policy-induced states, then low-rate consolidation — **13,000 updates over
-941,884 transitions**.
-
-**PPO was tried and rejected.** A pilot scored a worst-tier 84% against the
-matched rollback's 90%. It ships unmodified as
-[`ppo-pilot-rejected.json`](benchmarks/neural/ppo-pilot-rejected.json) with
-`status: rejected_and_not_resumed`. PPO, GAE and RND are implemented and tested;
-the released checkpoint claims no PPO improvement.
-
-The same discipline applied to deployment: dynamic INT8 quantization was 28%
-smaller and produced **5 action mismatches in 1,000 recurrent transitions**, so
-it was rejected and FP32 ships. That rejection is published too.
-
-## What it does not do
-
-- **Success is not stealth.** Median maximum trace saturates at 100.0 on tiers
-  3, 4 and 6 — the policy pins the trace meter and extracts anyway.
-- **Routes are competent, not optimal**: path efficiency 0.58–0.79.
-- **No superhuman claim.** That needs a matched-seed human cohort, which has not
-  been collected.
-- The *training* is documented but not fully reproducible from artifacts; the
-  *result* is verifiable exactly. See
-  [known limitations](wiki/training.md#known-limitations).
-
-## Play it locally
+Requires Python **3.12–3.14**. Run these commands from the cloned repository:
 
 ```bash
 git clone https://github.com/aswanth-07/ghostline.git
 cd ghostline
-python -m venv .venv && . .venv/bin/activate    # Windows: .\.venv\Scripts\Activate.ps1
+python -m venv .venv
+```
+
+Activate the environment with `source .venv/bin/activate` on macOS/Linux, or
+`.\.venv\Scripts\Activate.ps1` in Windows PowerShell, then install and play:
+
+```bash
 python -m pip install --constraint requirements.lock -e .
 ghostline play
 ```
 
-`WASD` move · `SHIFT` dash · `SPACE` disruption pulse · `ESC` pause.
-Touch devices get an on-screen stick.
-
-Watch the trained policy instead:
+To watch the bundled neural policy on the gameplay video's exact map:
 
 ```bash
 python -m pip install --constraint requirements.lock -e ".[agent]"
-ghostline lab --tier 6 --seed 2000000
+ghostline lab --level 6 --seed 2000000
 ```
 
-## Research continuation
+Use `ghostline play --level 1 --seed 42` to practice a repeatable mission.
+See [setup and packaging](wiki/setup.md) for recording, training, and Windows builds.
 
-The finished single-agent release stays in this repository. Multi-agent
-adversarial co-training continues separately in
-[`aswanth-07/ghostline-marl`](https://github.com/aswanth-07/ghostline-marl).
-That repository is an active research track and does not claim a validated
-result yet.
+## Under the hood
 
-## Verify the result yourself
+Ghostline is also a reinforcement-learning benchmark. Human input and policy
+actions drive the same deterministic **60 Hz simulation**. The policy chooses
+at **10 Hz** from **36 semantic actions**: nine movement choices, dash on/off,
+and pulse on/off. It receives structured versions of the information available
+through the player's HUD, minimap, and facility telemetry.
 
-The claim above is checkable in about five minutes, without retraining
-anything:
+| Layer | Responsibility |
+|---|---|
+| [Simulation](src/ghostline/simulation.py) and [generation](src/ghostline/generation.py) | Game rules, seeded facilities, collision, security, and extraction |
+| [Environment](src/ghostline/env_v1.py) | Public `GhostlineEnv-v1` Gymnasium interface |
+| [Model](src/ghostline/model.py) | Local-grid convolution, masked entity attention, and a 384-unit recurrent GRU |
+| [Presentation](src/ghostline/presentation.py) and [app](src/ghostline/app.py) | Pixel-art rendering, controls, progression, menus, and Agent Lab |
+| [Browser player](web/) | Pygbag/WebAssembly simulation with lazy ONNX Runtime Web inference |
+| [Benchmarks](benchmarks/) | Episode records, training lineage, export parity, and the final-test ledger |
+
+### Design decisions
+
+- **One simulation for play and learning.** Rendering stays outside the rules
+  engine, allowing headless training without a second implementation of the game.
+- **Player-equivalent observations.** The policy gets no privileged live enemy
+  coordinates. This constrains the agent and makes matched-map comparisons meaningful.
+- **Frozen release mechanics.** Six source modules, including the simulation,
+  environment adapter, and scripted policy, are fingerprinted. Preserving them keeps the shipped model and published evidence valid.
+- **Measured deployment choices.** FP32 ONNX ships because an INT8 candidate changed
+  actions during parity testing. The browser loads inference only when requested.
+
+## The trained runner
+
+The released policy learned through behavior cloning, four DAgger recovery
+rounds, and low-rate consolidation. Its final evaluation covers **3,000 held-out
+missions**, with 500 per level:
+
+| Level | Successful escapes | Wilson 95% interval | Median time |
+|---|---:|---:|---:|
+| 1 — Orientation | 99.8% | 98.9–100.0% | 13.0 s |
+| 2 — Surveillance | 100.0% | 99.2–100.0% | 12.7 s |
+| 3 — Patrol | 96.4% | 94.4–97.7% | 21.9 s |
+| 4 — Countermeasure | 98.0% | 96.4–98.9% | 23.2 s |
+| 5 — Lockdown | 99.0% | 97.7–99.6% | 27.9 s |
+| 6 — Ghostline | 89.6% | 86.6–92.0% | 31.1 s |
+
+Source: [raw episode records](benchmarks/neural/champion-final-8m-500.episodes.csv)
+and [aggregate report](benchmarks/neural/champion-final-8m-500.json).
+The [final-test ledger](benchmarks/final-test-slices.json) prevents reusing a
+consumed or retired evaluation slice. Rechecking the stored evidence does not
+consume new missions.
+
+**Limits of the result:** successful escape does not imply quiet play. The
+policy can survive high trace, its routes are not proven optimal, and no matched
+human study supports a superhuman claim. The released policy claims no PPO
+improvement: the [PPO pilot](benchmarks/neural/ppo-pilot-rejected.json) was rejected.
+Training is documented, but the archived artifacts do not support complete
+reproduction from scratch. See the [model card](models/model-card.md) and
+[training limitations](wiki/training.md#known-limitations).
+
+### Verify the evidence
 
 ```bash
 python -m pip install --constraint requirements.lock -e ".[dev]"
-python -m pytest -q                              # 329 tests
-python scripts/verify_release_evidence.py        # recomputes the whole result
+python -m pytest -q
+python scripts/verify_release_evidence.py
 python scripts/fuzz_ghostline_levels.py --seeds 10000
 ```
 
-`verify_release_evidence.py` is a recomputation, not a checksum comparison. It
-re-derives the environment fingerprint from source, recomputes every per-tier
-aggregate and Wilson interval from the raw 3,000 episode records, re-hashes each
-output file against the ledger, checks that reward components sum to the
-reported total within 1e-9, and loads the ONNX graph to verify its input shapes,
-dtypes and metadata. Hand-editing any published number fails it.
+The evidence verifier recomputes per-level aggregates and confidence intervals
+from the recorded episodes, validates artifact hashes and reward totals, and
+checks the ONNX graph and environment fingerprint. It does not retrain the model
+or rerun the consumed final-test slice.
 
-## How it fits together
+Historical APIs and evidence use the field name `tier` for the level number.
+The CLI accepts `--level`; older `--tier` commands remain compatible. Immutable
+artifacts also retain the historical label `GhostlineEnv-v2`, which names the
+same released mechanics exposed publicly as `GhostlineEnv-v1`.
 
-| | |
-|---|---|
-| `src/ghostline/simulation.py`, `generation.py`, `types.py`, `config.py` | Frozen mechanics. Hashed into the environment fingerprint — editing them invalidates every checkpoint and benchmark. |
-| `src/ghostline/env.py`, `env_v1.py` | Gymnasium contract, `Discrete(36)` |
-| `src/ghostline/model.py` | Recurrent actor-critic: conv local grid, masked attention over entities, 384-unit GRU |
-| `src/ghostline/presentation.py` | 640×360 renderer, native-resolution UI |
-| `web/` | Static Pygbag build; the simulation runs in WebAssembly |
-| `benchmarks/` | Immutable evidence and the one-way seed ledger |
+## Documentation and development
 
-Deeper detail lives in the [wiki](wiki/index.md):
-[architecture](wiki/implementation.md) ·
-[training and evaluation](wiki/training.md) ·
-[setup and release](wiki/setup.md) ·
-[assets](wiki/assets.md) ·
-[web deployment](wiki/web-deployment.md)
+- [Architecture](wiki/implementation.md) — simulation boundaries and observation contract.
+- [Training and evaluation](wiki/training.md) — data collection, rejected experiments, and evidence.
+- [Browser deployment](wiki/web-deployment.md) — static build and browser verification.
+- [Contributing](CONTRIBUTING.md) — bug reports, development setup, and compatibility requirements.
+- [Changelog](CHANGELOG.md) — release history.
 
-## A note on the contract name
+Multi-agent adversarial research continues in
+[ghostline-marl](https://github.com/aswanth-07/ghostline-marl); this repository
+contains the released single-player game.
 
-Immutable artifacts record their observation contract as `GhostlineEnv-v2` while
-the public environment id is `GhostlineEnv-v1`. Both name the same environment;
-the label is historical. Those artifacts are bound to content hashes, so
-rewriting the string inside them would invalidate the evidence it authenticates.
+## Assets and license
 
-## Asset disclosure
+Sprite atlases were AI-assisted and hand-cleaned. Provenance and processing
+are documented in [the asset manifest](assets/licenses.json) and
+[asset notes](wiki/assets.md). Generated imagery does not define collisions,
+navigation, or visibility. Audio is synthesized in the project.
 
-Sprite atlases were AI-assisted and then hand-cleaned; every generation prompt
-and retirement decision is recorded in
-[`assets/licenses.json`](assets/licenses.json) and [`wiki/assets.md`](wiki/assets.md).
-Generated imagery is never collision, navigation, visibility or simulation
-truth. Audio is synthesized in-project.
-
-`src/neon_arena/` is a preserved earlier prototype, kept for comparison and
-excluded from every distribution.
-
-## License
-
-MIT — see [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).
+MIT — [License](LICENSE) · [Third-party notices](THIRD_PARTY_NOTICES.md).

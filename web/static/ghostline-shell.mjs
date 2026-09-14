@@ -92,23 +92,23 @@ function setBootState(state, message = "") {
   if (state === "ready") {
     gameReady = true;
     title.textContent = "THE LINE IS OPEN";
-    copy.textContent = "Click to unlock audio and route keyboard input to the game.";
+    copy.textContent = "Steal the data, then reach the green exit. Enter to enable sound and keyboard controls.";
     button.textContent = "ENTER FACILITY";
     button.hidden = false;
     overlay.hidden = false;
     maybeAutoplay();
   } else if (state === "engage") {
-    title.textContent = "AUTHORIZE AUDIO";
-    copy.textContent = message || "One click lets the browser start audio and the secure simulation.";
-    button.textContent = "INITIALIZE GHOSTLINE";
+    title.textContent = "YOUR MISSION IS READY";
+    copy.textContent = message || "Enter the facility to enable sound and start playing.";
+    button.textContent = "ENTER FACILITY";
     button.hidden = false;
     overlay.hidden = false;
   } else if (state === "running") {
     overlay.hidden = true;
     $("canvas")?.focus();
   } else {
-    title.innerHTML = "PLAY THE CONTRACT.<br><em>OR WATCH THE POLICY.</em>";
-    copy.textContent = message || "Preparing the deterministic game and recurrent policy runtime.";
+    title.innerHTML = "STEAL THE SIGNAL.<br><em>MAKE YOUR ESCAPE.</em>";
+    copy.textContent = message || "Preparing your route into the facility.";
     button.hidden = true;
     overlay.hidden = false;
   }

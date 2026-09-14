@@ -8,8 +8,8 @@ It is bound to `GhostlineEnv-v2` fingerprint
 
 ## Release result
 
-The one-time 8M final test contains 500 never-before-opened seeds per tier. The
-policy passed at `99.8/100.0/96.4/98.0/99.0/89.6%` for tiers 1-6. The
+The one-time 8M final test contains 500 never-before-opened seeds per level. The
+policy passed at `99.8/100.0/96.4/98.0/99.0/89.6%` for levels 1-6. The
 [JSON report](champion-final-8m-500.json) contains all 3,000 episode records,
 exact seeds, action hashes, reward components, Wilson intervals, failures,
 damage, detections, time, path efficiency, optional data, and latency. The
@@ -19,7 +19,7 @@ damage, detections, time, path efficiency, optional data, and latency. The
 binds hashes for all three outputs.
 
 Before final evaluation, the same checkpoint passed two disjoint 100-seed-per-
-tier confirmation windows at `99/99/96/99/99/85%` and
+level confirmation windows at `99/99/96/99/99/85%` and
 `100/100/96/99/99/86%`.
 
 ## Training lineage

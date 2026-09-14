@@ -101,10 +101,10 @@ def test_launch_shell_uses_the_portfolio_typography_and_semantic_tokens() -> Non
     assert "--link: #59a5fc" in css
     assert "--comment: #86ff6b" in css
     assert "--merged: #bc8cff" in css
-    assert "Play the contract." in template
+    assert "Steal the signal." in template
     assert '<label class="field">LEVEL' in template
     assert '<small>LEVEL</small><strong id="live-tier">L1</strong>' in template
-    assert "Matched level + seed" in template
+    assert "Reach the green extraction relay" in template
     assert 'class="skip-link" href="#game-frame"' in template
     assert 'id="game-frame" class="game-frame" tabindex="-1"' in template
     assert 'id="main-content" class="workspace" tabindex="-1"' in template

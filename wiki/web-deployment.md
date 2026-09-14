@@ -5,10 +5,10 @@ Ghostline's browser release is a static Pygbag 0.9.3 build. The deterministic Py
 ## Architecture
 
 - `web/main.py` starts the same `GameApp` through its cooperative async loop.
-- `web/runtime.py` is the only Python adapter. It exposes tier/seed launch, current-run agent takeover, exact portfolio-run replay, return-to-human control, touch-device detection, and player-equivalent observation serialization. It queues inference from the exact state at each 10 Hz boundary; if a browser result misses the next render frame, simulation time waits instead of advancing with a fabricated neutral action.
+- `web/runtime.py` is the only Python adapter. It exposes level/seed launch, current-run agent takeover, exact portfolio-run replay, return-to-human control, touch-device detection, and player-equivalent observation serialization. It queues inference from the exact state at each 10 Hz boundary; if a browser result misses the next render frame, simulation time waits instead of advancing with a fabricated neutral action.
 - `web/static/policy-bridge.mjs` owns asynchronous inference, legal-action enforcement, persistent GRU state, latency telemetry, and backend selection. Threaded WASM is the measured release default for this compact recurrent graph; `?backend=webgpu` retains the WebGPU comparison path with automatic WASM fallback.
 - `web/static/matched-runs.mjs` admits comparison cards only when both completed
-  runs have the exact same tier and seed. Refused comparisons display
+  runs have the exact same level and seed. Refused comparisons display
   `NOT COMPARED` with an explicit reason, so an unmatched pair is never quietly
   presented as a like-for-like result.
 - `web/static/embed-bridge.mjs` owns the versioned, origin-scoped portfolio message contract. It never accepts gameplay commands from the parent page.
@@ -29,8 +29,8 @@ Ghostline's browser release is a static Pygbag 0.9.3 build. The deterministic Py
   recording, screenshots, source drafts, retired key art, and unused web
   derivatives are never copied into the browser stage.
 
-The model is never fetched on ordinary human play. ONNX Runtime and the content-addressed model are requested only after `AGENT TAKEOVER`, `REPLAY PORTFOLIO AGENT RUN`, or `?autoplay=1`. The replay action always starts a fresh tier-6 seed-2,000,000 run, while ordinary takeover preserves an already active human contract.
-Campaign progression and settings use the desktop JSON contract inside the Python runtime and are mirrored to browser `localStorage`, so refreshes retain unlocked tiers without introducing a second save schema. Storage denial in a restricted iframe falls back to a fresh in-memory profile.
+The model is never fetched on ordinary human play. ONNX Runtime and the content-addressed model are requested only after `AGENT TAKEOVER`, `REPLAY PORTFOLIO AGENT RUN`, or `?autoplay=1`. The replay action always starts a fresh level-6 seed-2,000,000 run, while ordinary takeover preserves an already active human contract.
+Campaign progression and settings use the desktop JSON contract inside the Python runtime and are mirrored to browser `localStorage`, so refreshes retain unlocked levels without introducing a second save schema. Storage denial in a restricted iframe falls back to a fresh in-memory profile.
 
 Coarse-pointer phones enable the in-canvas movement stick, dash, pulse, pause,
 context contacts before the first mission frame; a
@@ -98,7 +98,7 @@ message if the two origin signals disagree:
 
 ```json
 {"source":"ghostline","version":1,"type":"ready","modelAvailable":true}
-{"source":"ghostline","version":1,"type":"run-complete","controller":"agent","tier":6,"seed":2000071,"success":true,"duration":41.25}
+{"source":"ghostline","version":1,"type":"run-complete","controller":"agent","level":6,"seed":2000071,"success":true,"duration":41.25}
 ```
 
 `modelAvailable: false` identifies a valid human-only fallback, not a failed
@@ -120,7 +120,7 @@ Losing tab or iframe focus pauses an active human mission and never steals focus
 back automatically; the player explicitly clicks the game before resuming. A
 mission that switches controllers is labeled `hybrid`, including takeover time
 and data, and is excluded from the pure human-versus-agent result cards.
-After a run ends, its resolved tier and procedural seed are pinned into the
+After a run ends, its resolved level and procedural seed are pinned into the
 launcher so the other controller replays the identical contract by default.
 If inference fails after takeover, the bridge immediately invalidates recurrent
 memory and its prior action, emits only neutral action zero, and asks the Python

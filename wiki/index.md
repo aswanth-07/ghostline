@@ -8,7 +8,7 @@ status: active
 
 Ghostline is a procedural stealth-infiltration game and reinforcement-learning
 benchmark with a deterministic 60 Hz simulation, validated furnished facilities,
-a scrolling pixel-art presentation, six contract tiers, and a player-equivalent
+a scrolling pixel-art presentation, six contract levels, and a player-equivalent
 recurrent policy.
 
 Human play and policy control run the same simulation, read the same structured
@@ -18,9 +18,9 @@ sees is hidden from a player.
 ## Frozen product decisions
 
 - Quota-based data theft followed by extraction.
-- Three integrity points, tier-scaled mission clock, escalating recoverable
+- Three integrity points, level-scaled mission clock, escalating recoverable
   trace, dash, and disruption pulse.
-- Cameras, human guards, and late-tier response drones; no player weapon combat.
+- Cameras, human guards, and late-level response drones; no player weapon combat.
 - Keyboard, cursor and touch play, plus Agent Lab and a static Chrome-first web
   showcase; no gamepad and no multiplayer scope.
 - Player-equivalent structured observations; no renderer-only or hidden live

@@ -21,7 +21,7 @@ async def custom_site():
         await asyncio.sleep(0.01)
     platform.document.body.style.background = "#000000"
     platform.window.canvas.style.visibility = "visible"
-    platform.window.ghostlineShell.setBootState("booting", "Mounting the deterministic simulation...")
+    platform.window.ghostlineShell.setBootState("booting", "Preparing the facility...")
 
     bundle = "{{cookiecutter.archive}}"
     appdir = Path(f"/data/data/{bundle}")
@@ -47,7 +47,7 @@ async def custom_site():
     autoplay = str(platform.window.location.search).find("autoplay=1") >= 0
     if not platform.window.MM.UME and not autoplay:
         __import__(__name__).__file__ = main
-        platform.window.ghostlineShell.setBootState("engage", "One click unlocks audio and keyboard control.")
+        platform.window.ghostlineShell.setBootState("engage", "Enter the facility to enable sound and keyboard controls.")
         while not platform.window.MM.UME:
             await asyncio.sleep(0.1)
 
@@ -73,7 +73,7 @@ asyncio.run(custom_site())
   <meta http-equiv="X-UA-Compatible" content="IE=edge">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
   <meta name="theme-color" content="#000000">
-  <meta name="description" content="Play Ghostline, a procedural stealth-infiltration game, or watch a recurrent RL policy take control.">
+  <meta name="description" content="Steal the data. Outsmart security. Escape. Play Ghostline, a procedural pixel-art stealth game with six levels and a trained AI runner.">
   <meta name="mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <title>{{cookiecutter.title}}</title>
@@ -107,19 +107,19 @@ asyncio.run(custom_site())
   <script src="./vendor/browserfs-1.4.3.min.js"></script>
 </head>
 <body data-control="human" data-boot="booting" data-embed="false">
-  <a class="skip-link" href="#game-frame">Skip to playable contract</a>
+  <a class="skip-link" href="#game-frame">Skip to game</a>
   <div id="orientation-gate" class="orientation-gate" role="status" aria-live="polite">
     <div class="orientation-card">
       <span class="phone-rotate" aria-hidden="true"></span>
       <span class="orientation-index">DISPLAY / 01</span>
       <strong>Rotate to landscape.</strong>
-      <p>The full tactical field of view is part of the player-equivalent contract. Landscape keeps the scene and controls legible.</p>
+      <p>Turn your device sideways to see the facility and reach every control.</p>
     </div>
   </div>
   <header class="site-header" aria-label="Ghostline project index">
     <a class="brand" href="https://aaswanthraj.vercel.app/projects/ghostline" target="_blank" rel="noopener" aria-label="Open the Ghostline engineering case study">
       <span class="brand-mark" aria-hidden="true">PROJECT / 01</span>
-      <span class="brand-copy"><strong>Ghostline</strong><span>Procedural RL system</span></span>
+      <span class="brand-copy"><strong>Ghostline</strong><span>Pixel-art stealth game</span></span>
     </a>
     <nav class="site-index" aria-label="Page sections">
       <a href="#playfield"><span>01</span><strong>Playfield</strong></a>
@@ -132,9 +132,9 @@ asyncio.run(custom_site())
       <span id="policy-chip" class="chip" data-state="idle">CHECKING AGENT</span>
     </div>
     <div class="header-context" aria-label="Release summary">
-      <p>PLAYER-EQUIVALENT POLICY</p>
-      <span>STATIC PYGBAG / ONNX</span>
-      <span>GHOSTLINEENV-V1</span>
+      <p>SIX LEVELS. ONE CLEAN ESCAPE.</p>
+      <span>PLAY SOLO / WATCH THE AI</span>
+      <span>PROCEDURAL FACILITIES</span>
     </div>
   </header>
 
@@ -142,10 +142,10 @@ asyncio.run(custom_site())
     <section id="playfield" class="game-column" aria-labelledby="playfield-title">
       <header class="workspace-intro">
         <div>
-          <p>01 / Live environment</p>
-          <h1 id="playfield-title">Play. Observe. Compare.</h1>
+          <p>01 / Infiltrate the facility</p>
+          <h1 id="playfield-title">Get in. Get the data. Get out.</h1>
         </div>
-        <p>One deterministic simulation. The same visible state for human and recurrent policy control.</p>
+        <p>Steal enough data to open the exit. Dodge cameras, outsmart patrols, and escape before the clock runs out.</p>
       </header>
       <div id="game-frame" class="game-frame" tabindex="-1">
         <canvas class="emscripten" id="canvas" width="1" height="1" tabindex="0" oncontextmenu="event.preventDefault()"></canvas>
@@ -154,27 +154,27 @@ asyncio.run(custom_site())
         <div id="launch-gate" class="launch-gate" role="dialog" aria-modal="true" aria-labelledby="launch-title">
           <div class="launch-layout">
             <div class="launch-card">
-              <span class="launch-kicker">INTERACTIVE RELEASE / GHOSTLINEENV-V1</span>
-              <h2 id="launch-title">Play the contract.<br><em>Or watch the policy.</em></h2>
-              <p id="launch-copy">A deterministic procedural stealth game and recurrent agent running together in your browser.</p>
+              <span class="launch-kicker">GHOSTLINE / A PROCEDURAL STEALTH GAME</span>
+              <h2 id="launch-title">Steal the signal.<br><em>Make your escape.</em></h2>
+              <p id="launch-copy">Six levels of escalating security. Play your own route or watch the trained AI runner attempt the same mission.</p>
               <div id="transfer">
-                <div id="status">Downloading browser runtime...</div>
+                <div id="status">Loading Ghostline...</div>
                 <progress value="0" max="100" id="progress"></progress>
               </div>
               <button id="focus-game" class="primary" type="button" hidden>ENTER FACILITY</button>
             </div>
-            <dl class="launch-index" aria-label="Release contract">
-              <div><dt>01 / Runtime</dt><dd>Python / WebAssembly</dd></div>
-              <div><dt>02 / Policy</dt><dd>Recurrent GRU / ONNX</dd></div>
-              <div><dt>03 / Interface</dt><dd>36 player actions</dd></div>
-              <div><dt>04 / Evaluation</dt><dd>Matched level + seed</dd></div>
+            <dl class="launch-index" aria-label="Mission briefing">
+              <div><dt>01 / Infiltrate</dt><dd>Find the amber data terminals</dd></div>
+              <div><dt>02 / Steal</dt><dd>Stand nearby to download data</dd></div>
+              <div><dt>03 / Survive</dt><dd>Break sight. Dash. Disrupt.</dd></div>
+              <div><dt>04 / Escape</dt><dd>Reach the green extraction relay</dd></div>
             </dl>
           </div>
         </div>
       </div>
 
       <div class="toolbar" aria-label="Game controls">
-        <span class="toolbar-label">RUNTIME CONTROLS</span>
+        <span class="toolbar-label">GAME CONTROLS</span>
         <button id="focus-control" type="button">FOCUS GAME</button>
         <button id="fullscreen-control" type="button">FULLSCREEN</button>
         <button id="intel-panel-control" type="button" aria-controls="agent-lab-panel" aria-expanded="true">HIDE INTEL</button>
@@ -191,7 +191,7 @@ asyncio.run(custom_site())
         <button id="mobile-lab-close" type="button" aria-label="Close run controls">CLOSE</button>
       </div>
       <section class="panel">
-        <header class="panel-heading"><span>02</span><div><small>RUN SETUP</small><h2>Contract launcher</h2></div></header>
+        <header class="panel-heading"><span>02</span><div><small>RUN SETUP</small><h2>Choose your mission</h2></div></header>
         <div class="contract-grid">
           <label class="field">LEVEL
             <select id="tier-select">
@@ -203,11 +203,11 @@ asyncio.run(custom_site())
               <option value="6">06 // GHOSTLINE</option>
             </select>
           </label>
-          <label class="field">SEED
+          <label class="field">MAP SEED (OPTIONAL)
             <input id="seed-input" inputmode="numeric" min="0" max="2147483647" placeholder="RANDOM" type="number">
           </label>
-          <button id="play-selected" class="primary wide" type="button">PLAY SELECTED CONTRACT</button>
-          <button id="portfolio-agent-control" class="agent wide" type="button">REPLAY PORTFOLIO AGENT RUN</button>
+          <button id="play-selected" class="primary wide" type="button">PLAY THIS LEVEL</button>
+          <button id="portfolio-agent-control" class="agent wide" type="button">WATCH THE GAMEPLAY DEMO</button>
         </div>
       </section>
 
@@ -238,8 +238,8 @@ asyncio.run(custom_site())
   </main>
 
   <footer class="site-legal">
-    <span>GHOSTLINE 1.0 / STATIC PLAYER</span>
-    <span class="legal-status">RELEASED CONTRACT</span>
+    <span>GHOSTLINE 1.0 / STEALTH GAME</span>
+    <span class="legal-status">SINGLE-PLAYER</span>
     <a href="./LICENSE" target="_blank" rel="license noopener">MIT LICENSE</a>
     <a href="./THIRD_PARTY_NOTICES.md" target="_blank" rel="noopener">THIRD-PARTY NOTICES</a>
   </footer>
@@ -261,11 +261,11 @@ asyncio.run(custom_site())
       info.hidden = true;
       box.hidden = true;
       transfer.hidden = false;
-      globalThis.ghostlineShell?.setBootState("booting", "Loading the WebAssembly runtime...");
+      globalThis.ghostlineShell?.setBootState("booting", "Loading the game engine...");
     }
 
     function custom_prerun() {
-      globalThis.ghostlineShell?.setBootState("booting", "Preparing the Python filesystem...");
+      globalThis.ghostlineShell?.setBootState("booting", "Preparing game files...");
     }
 
     function custom_postrun() {}

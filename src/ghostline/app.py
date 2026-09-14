@@ -317,7 +317,7 @@ class GameApp:
 
     def _main_menu(self) -> None:
         items = [
-            "PLAY CONTRACTS",
+            "PLAY LEVELS",
             "AGENT LAB",
             "HOW TO PLAY",
             "SETTINGS",
@@ -350,15 +350,15 @@ class GameApp:
             subtitle="Move unseen. Take the signal. Leave no trace.",
             items=items,
             selected=self.selection,
-            badge="PROCEDURAL STEALTH // RL SHOWCASE",
+            badge="PROCEDURAL STEALTH // SIX LEVELS",
             panel_title="OPERATIVE STATUS",
             panel=[
                 f"CLEARANCE       {self.progression['highest_unlocked_tier']}/6",
-                f"CONTRACTS WON   {cleared}/6",
-                f"RUNTIME POLICY  {self.policy_name}",
+                f"LEVELS CLEARED   {cleared}/6",
+                f"RUNNER  {self.policy_name}",
                 "",
-                "SIX PROCEDURAL CONTRACT LEVELS",
-                "AGENT LAB REPLAYS THE VERIFIED RUNNER",
+                "STEAL DATA. REACH THE GREEN EXIT.",
+                "AGENT LAB: WATCH THE AI RUNNER",
             ],
             footer=f"{self._key_label('menu_up')}/{self._key_label('menu_down')}  NAVIGATE     {self._key_label('confirm')}  SELECT",
         )
@@ -377,7 +377,7 @@ class GameApp:
         spec = TIERS[self.selection + 1]
         best = int(self.progression.get("best_scores", {}).get(str(spec.number), 0))
         self.renderer.draw_screen(
-            title="CONTRACTS",
+            title="LEVEL SELECT",
             subtitle=f"CLEARANCE {unlocked}/6",
             items=items,
             selected=self.selection,
@@ -389,7 +389,7 @@ class GameApp:
                 f"WINDOW     {spec.mission_seconds // 60}:{spec.mission_seconds % 60:02d}",
                 f"BEST       {best:06d}" if best else "BEST       —",
             ],
-            footer=f"{self._key_label('back')}  BACK     COMPLETE A CONTRACT TO UNLOCK THE NEXT LEVEL",
+            footer=f"{self._key_label('back')}  BACK     ESCAPE TO UNLOCK THE NEXT LEVEL",
         )
 
     def _lab_select(self) -> None:
@@ -436,7 +436,7 @@ class GameApp:
             status = "CLEAR" if run.get("success") else "FAIL"
             return f"{label:<7} {status} {float(run.get('duration_seconds', 0)):5.1f}s T{float(run.get('max_trace', 0)):04.1f}"
 
-        return ["MATCHED LOCAL RESULTS", line("HUMAN", human), line("AGENT", agent)]
+        return ["RECENT RUNS // THIS LEVEL", line("HUMAN", human), line("AGENT", agent)]
 
     def _briefing(self) -> None:
         events = self._events()

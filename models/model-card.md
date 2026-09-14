@@ -44,13 +44,13 @@ The failed 2.98-million-decision pure-PPO attempt is retained as historical nega
 
 ## Current fair-teacher qualification
 
-The final observation-only teacher passed two disjoint current-fingerprint validation gates covering 100 seeds per tier. Tier 1-6 success was `100/100/99/99/99/86%` and `100/100/99/99/99/89%`. The machine-readable reports are [`teacher-fast-ops-validation-a-100.json`](../benchmarks/teacher/teacher-fast-ops-validation-a-100.json) and [`teacher-fast-ops-validation-b-100.json`](../benchmarks/teacher/teacher-fast-ops-validation-b-100.json). These gates qualify trajectory collection; they are not neural or final-test results.
+The final observation-only teacher passed two disjoint current-fingerprint validation gates covering 100 seeds per level. Level 1-6 success was `100/100/99/99/99/86%` and `100/100/99/99/99/89%`. The machine-readable reports are [`teacher-fast-ops-validation-a-100.json`](../benchmarks/teacher/teacher-fast-ops-validation-a-100.json) and [`teacher-fast-ops-validation-b-100.json`](../benchmarks/teacher/teacher-fast-ops-validation-b-100.json). These gates qualify trajectory collection; they are not neural or final-test results.
 
 ## Historical pre-freeze teacher result
 
 The following 6M result used the same public observation/action contract, but predates the final route, security, patrol, and shared-perception freeze. It is retained as transparent historical evidence, not represented as the current release gate.
 
-| Tier | Teacher success | Wilson 95% interval | Mean damage | Dominant failure |
+| Level | Teacher success | Wilson 95% interval | Mean damage | Dominant failure |
 |---|---:|---:|---:|---|
 | 1 - Orientation | 500/500 (100.0%) | 99.24%-100.00% | 0.000 | None |
 | 2 - Surveillance | 500/500 (100.0%) | 99.24%-100.00% | 0.000 | None |
@@ -61,9 +61,9 @@ The following 6M result used the same public observation/action contract, but pr
 
 The aggregate report is tracked at [`benchmarks/teacher/teacher-release-gate-6m-500.json`](../benchmarks/teacher/teacher-release-gate-6m-500.json) with a [CSV export](../benchmarks/teacher/teacher-release-gate-6m-500.csv). The [audit history](../benchmarks/teacher/README.md) records why every 2M-6M result is now historical.
 
-The immutable retired audits measured tiers 1-6 at `100.0/100.0/97.0/94.8/96.8/80.8` on 3M, `100.0/100.0/96.6/95.2/97.2/83.8` on 4M, and `100.0/100.0/97.6/93.6/97.4/85.6` on 5M. They are reported as negative generalization evidence and were never reopened after inspection.
+The immutable retired audits measured levels 1-6 at `100.0/100.0/97.0/94.8/96.8/80.8` on 3M, `100.0/100.0/96.6/95.2/97.2/83.8` on 4M, and `100.0/100.0/97.6/93.6/97.4/85.6` on 5M. They are reported as negative generalization evidence and were never reopened after inspection.
 
-Tier-6 directional inertia was selected only on two disjoint validation slices, never on a final-test slice. No code or setting changed while the 6M gate was open; later player-facing mechanics and perception changes deliberately retired that evidence and required fresh current-fingerprint teacher qualification.
+Level-6 directional inertia was selected only on two disjoint validation slices, never on a final-test slice. No code or setting changed while the 6M gate was open; later player-facing mechanics and perception changes deliberately retired that evidence and required fresh current-fingerprint teacher qualification.
 
 These results validate teacher trajectory quality; they are not neural-policy results. The selected neural checkpoint and its independent final benchmark are reported below. The matched-seed human cohort remains pending.
 
@@ -73,9 +73,9 @@ The frozen checkpoint has SHA-256
 `76baa30af55cdaa2e71bb6ba06672bd9203455552358017505685827240b2e47`
 and environment fingerprint
 `521c449a8bd9a540977a918f5b094dd3aeff44cc579a55f75e22a74bab20e129`.
-The one-time 8M audit ran 500 deterministic, unseen seeds per tier:
+The one-time 8M audit ran 500 deterministic, unseen seeds per level:
 
-| Tier | Target | Measured neural success | Wilson 95% interval | Mean damage | Median time |
+| Level | Target | Measured neural success | Wilson 95% interval | Mean damage | Median time |
 |---|---:|---:|---:|---:|---:|
 | 1 - Orientation | 95% | 499/500 (99.8%) | 98.88%-99.96% | 0.000 | 12.98 s |
 | 2 - Surveillance | 95% | 500/500 (100.0%) | 99.24%-100.00% | 0.000 | 12.73 s |
@@ -87,7 +87,7 @@ The one-time 8M audit ran 500 deterministic, unseen seeds per tier:
 The complete [JSON report](../benchmarks/neural/champion-final-8m-500.json),
 [aggregate CSV](../benchmarks/neural/champion-final-8m-500.csv), and
 [episode CSV](../benchmarks/neural/champion-final-8m-500.episodes.csv) expose
-all failures and per-episode evidence. Tier 6 had two clock expiries and 50
+all failures and per-episode evidence. Level 6 had two clock expiries and 50
 integrity failures; those 52 failures are retained rather than filtered.
 
 ## Training lineage
@@ -100,7 +100,7 @@ current-fingerprint lineage. A historical GRU checkpoint was used only as a
 declared weight initialization; all selection evidence, labels, recovery data,
 and optimizer state are current-fingerprint. The 384-unit model received a
 5,000-update initial clone, 6,000 DAgger updates, and a 2,000-update low-rate
-consolidation pass. Two disjoint 100-seed-per-tier confirmation gates passed
+consolidation pass. Two disjoint 100-seed-per-level confirmation gates passed
 before the final slice was opened. Exact reports and lineage are indexed in
 [`benchmarks/neural/README.md`](../benchmarks/neural/README.md).
 
@@ -110,7 +110,7 @@ This is a portfolio/research policy for procedural, partially observed game
 RL. Results are tied to the frozen mechanics and observation contract (labeled
 `GhostlineEnv-v2` inside the immutable artifacts). Deterministic success does
 not imply optimal trace, optional-data collection or route efficiency — median
-maximum trace is saturated at 100.0 on tiers 3, 4 and 6, so the policy solves
+maximum trace is saturated at 100.0 on levels 3, 4 and 6, so the policy solves
 contracts without playing quietly. No comparison with real players is valid
 until a matched-seed human cohort is collected.
 

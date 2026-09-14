@@ -20,6 +20,12 @@ python -m pip install --constraint requirements.lock -e .
 ghostline play
 ```
 
+Choose **Play Levels** to progress from Orientation to Ghostline. Each successful
+escape unlocks the next level. Use `ghostline play --level 3 --seed 42` to practice
+a specific mission. The browser selector and Agent Lab expose all six levels.
+Older `--tier` commands remain aliases for compatibility; saved files and
+benchmark records retain their historical field names.
+
 The base install has no PyTorch, ONNX Runtime, recording codec or packager
 dependency. The environment runs headlessly with deterministic scripted
 controllers.
@@ -29,7 +35,7 @@ controllers.
 ```powershell
 # Lightweight published-v1 ONNX inference; no PyTorch.
 python -m pip install --constraint requirements.lock -e ".[agent]"
-ghostline lab --tier 6 --seed 2000000
+ghostline lab --level 6 --seed 2000000
 
 # Tests, lock maintenance, and distributions.
 python -m pip install --constraint requirements.lock -e ".[dev]"
@@ -57,20 +63,23 @@ python scripts/fuzz_ghostline_levels.py --seeds 10000
 python scripts/benchmark_ghostline.py --decisions 10000 --tier 6 --workers 22 --minimum-decisions-per-second 3000 --output benchmarks/system/headless-throughput.json
 ```
 
-## Reproducing the training lineage
+## Training new policies
 
 ```powershell
 python -m pip install --constraint requirements.lock -e ".[train]"
 
-ghostline imitate collect --output artifacts/teacher-data --episodes-per-tier 100 --overwrite
+ghostline imitate collect --output artifacts/teacher-data --episodes-per-level 100 --overwrite
 ghostline imitate bc --dataset artifacts/teacher-data --output artifacts/bc-current
 ghostline imitate dagger --base-dataset artifacts/teacher-data --initial-checkpoint artifacts/bc-current/best.pt --output artifacts/dagger --beta-start 0
-ghostline train --hours 24 --experiment ghostline-universal --init-checkpoint PATH_FROM_DAGGER_OUTPUT --initial-curriculum-tier 6
+ghostline train --hours 24 --experiment ghostline-universal --init-checkpoint PATH_FROM_DAGGER_OUTPUT --initial-curriculum-level 6
 ```
 
-These reproduce the published lineage. The resulting checkpoint and evidence
-metadata carry the historical internal label `GhostlineEnv-v2`; the public
-environment id is `GhostlineEnv-v1`. Both name the same environment.
+These are examples of the supported training stages, not an exact reproduction
+of the released checkpoint. In particular, `ghostline train` launches PPO, whose
+published pilot was rejected. The release uses behavior cloning, DAgger and
+consolidation. See [training limitations](training.md#known-limitations) before
+planning a reproduction. New artifacts retain the historical internal label
+`GhostlineEnv-v2`; the public environment id is `GhostlineEnv-v1`.
 
 ## Recording, ONNX export, and Windows package
 
@@ -78,7 +87,7 @@ The package ships the verified champion:
 
 ```powershell
 python -m pip install --constraint requirements.lock -e ".[train,media,build]"
-ghostline record --model models/ghostline-policy.pt --tier 6 --seed 2000000 --output videos/ghostline-demo.mp4
+ghostline record --model models/ghostline-policy.pt --level 6 --seed 2000000 --output videos/ghostline-demo.mp4
 ghostline export --model models/ghostline-policy.pt --output models/ghostline-policy.fp32.onnx --quantize --deployment-output models/ghostline-policy.onnx --parity-samples 1000
 Copy-Item models/ghostline-policy.fp32.parity.json benchmarks/neural/champion-onnx-parity.json
 python scripts/verify_release_evidence.py

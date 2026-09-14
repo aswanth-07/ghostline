@@ -66,7 +66,7 @@ contract `GhostlineEnv-v2`.
 
 ## Release-scale QA
 
-`scripts/qa_scaled_visuals.py` freezes representative title, briefing, Field Manual, pause, debrief, settings, Accessibility, Agent Lab selection/live, and tier-6 gameplay frames, then presents each through the shipping renderer at 1280x720 and 1920x1080. The world layer remains nearest-neighbour pixel art; the script now requires a non-zero post-scale text difference and native glyph runs in every scene, proving that menus, HUD, captions, and telemetry are rerasterized at output resolution rather than enlarging 640x360 glyph pixels. The earlier 2026-07-13 v4 matrix under `artifacts/visual-qa/flat-vision-grades-v4/` remains the pre-native-text exact-scaling baseline. Reviewed gameplay and locomotion captures are tracked under `assets/screenshots/`; visible-window and Chrome checks remain separate release gates.
+`scripts/qa_scaled_visuals.py` freezes representative title, briefing, Field Manual, pause, debrief, settings, Accessibility, Agent Lab selection/live, and level-6 gameplay frames, then presents each through the shipping renderer at 1280x720 and 1920x1080. The world layer remains nearest-neighbour pixel art; the script now requires a non-zero post-scale text difference and native glyph runs in every scene, proving that menus, HUD, captions, and telemetry are rerasterized at output resolution rather than enlarging 640x360 glyph pixels. The earlier 2026-07-13 v4 matrix under `artifacts/visual-qa/flat-vision-grades-v4/` remains the pre-native-text exact-scaling baseline. Reviewed gameplay and locomotion captures are tracked under `assets/screenshots/`; visible-window and Chrome checks remain separate release gates.
 
 The 2026-07-27 chrome redesign is under `artifacts/qa/ui-redesign/`. Its 20-scene matrix passes the native-text gate at both release sizes. A regression paints a sentinel, renders only the clipped world layers, and requires the reserved band to survive untouched at every HUD scale, so world art can never re-enter the chrome.
 
@@ -75,7 +75,7 @@ The 2026-07-26 interface-defect pass is under `artifacts/qa/ui-fixes/`. Its 20-s
 The 2026-07-29 render-cache pass is under `artifacts/qa/render-cache/`. Its
 20-scene matrix passes the native-text gate at both release sizes and measures
 62.5 FPS at 1280x720 and 1920x1080. The isolated gameplay draw cost fell from
-7.98 ms to 2.14 ms per frame, worst tier from 11.31 ms to 2.51 ms, by painting
+7.98 ms to 2.14 ms per frame, worst level from 11.31 ms to 2.51 ms, by painting
 terrain once per level and memoising vision-cone fans by observer pose. Frames
 are pixel-identical to the previous renderer on static scenes; the only
 difference under motion is cone-pose quantisation, measured at 0.013% of pixels

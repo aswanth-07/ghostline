@@ -17,13 +17,13 @@ That is a historical internal label from when the evidence was frozen, and it
 names the same environment. `env_v1.py` is a zero-mechanics wrapper that gives
 the released environment its stable public name without touching the
 fingerprinted bytes; it reports both, as `contract` and
-`historical_internal_contract`. Rewriting the label inside a signed artifact
+`historical_internal_contract`. Rewriting the label inside a hash-bound artifact
 would invalidate the hash chain that authenticates it.
 
 ## Layer boundaries
 
-- `simulation.py`, `generation.py`, `types.py` and `config.py` are the frozen
-  simulation and facility contract. They are hashed together into the
+- `config.py`, `env.py`, `generation.py`, `policies.py`, `simulation.py`, and
+  `types.py` define the frozen game and observation contract. They are hashed together into the
   environment fingerprint
   `521c449a8bd9a540977a918f5b094dd3aeff44cc579a55f75e22a74bab20e129`,
   so any edit to them invalidates every checkpoint and every benchmark record.
@@ -36,7 +36,7 @@ would invalidate the hash chain that authenticates it.
 - Human, scripted and neural controllers emit the same semantic actions.
 
 Simulation runs at 60 Hz. Policies decide at 10 Hz through six-tick action
-repeat. A replay is deterministic from contract, tier, seed and action sequence.
+repeat. A replay is deterministic from contract, level, seed and action sequence.
 
 ## Public contract
 
@@ -52,7 +52,7 @@ the human and policy results comparable at all.
 
 ## Procedural generation
 
-`LevelGenerator` builds a furnished facility from a seed and a tier, then
+`LevelGenerator` builds a furnished facility from a seed and a level, then
 validates it before the simulation will accept it: reachable quota and
 extraction, a safe spawn, valid patrol routes, and route loops so no contract
 depends on a single corridor. A seed that fails validation is rejected rather
@@ -100,11 +100,12 @@ Python-level draw calls rather than by pixels. Two caches keep that count low:
   while screen projection still runs every frame. The cache is bounded and
   cleared wholesale rather than tracking recency.
 
-Both invalidate on `(seed, tier, level identity)`. A cached frame is
+Both invalidate on `(seed, tier, level identity)`; `tier` is the historical
+field name for the selected level. A cached frame is
 pixel-identical to one drawn with a cold cache; cone-pose quantisation is the
 only approximation and is bounded by regression at well under 0.5% of pixels.
 Isolated gameplay draw cost on the reference desktop is 2.14 ms per frame
-against a 16.67 ms budget, measured across tiers 1, 3, 4 and 6.
+against a 16.67 ms budget, measured across levels 1, 3, 4 and 6.
 
 ## Verification gates
 

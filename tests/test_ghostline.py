@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-import os
-
 import numpy as np
 import pytest
 import gymnasium as gym
@@ -11,7 +9,6 @@ from ghostline.curriculum import AdaptiveCurriculum
 from ghostline.config import (
     DRONE_STRIKE_WINDUP_SECONDS,
     GUARD_CHASE_SPEED_RATIOS,
-    GUARD_GRADE_SPEED_MULTIPLIERS,
     GUARD_PATROL_DWELL_SECONDS,
     GUARD_SEARCH_DURATION_MULTIPLIERS,
     GUARD_STRIKE_WINDUP_SECONDS,
