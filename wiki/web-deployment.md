@@ -308,9 +308,10 @@ model build. A deployment therefore fails closed when
 silently publish the diagnostic human-only bundle. The output includes the MIT
 license, publishes `.web-build/ghostline/build/web`, supplies COOP/COEP for
 threaded WASM, disables caching for the HTML/manifest, and applies immutable
-caching only to versioned runtime and content-addressed model assets. Regular
-CI labels its `--human-only` artifact as diagnostic, while the tag/manual
-release workflow requires the champion and runs recurrent WASM inference.
+caching only to versioned runtime and content-addressed model assets. Run the
+release checks locally before deployment. A `--human-only` build is diagnostic;
+the release build requires the champion policy. GitHub Actions workflows are
+disabled and removed.
 
 ```powershell
 npx vercel link

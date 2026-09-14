@@ -25,6 +25,8 @@ All notable changes to this project are documented here. The format follows
 
 ### Removed
 
+- Hosted CI and automated release workflows; verification and packaging run locally.
+
 - Retired `neon_arena` prototype and its exclusive test suites. The active
   Ghostline game and compatibility environment remain supported; the prototype
   remains available in Git history.

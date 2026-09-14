@@ -13,8 +13,9 @@ python -m pip install --constraint requirements.lock -e ".[dev]"
 python -m pytest -q
 ```
 
-Always install through `requirements.lock`. CI runs `pip check`, and an
-unpinned resolve will pass locally and fail there.
+Always install through `requirements.lock`, then run `python -m pip check`.
+Verification runs locally; this repository has no hosted CI or automated release
+workflows.
 
 ## Preserve the released contract
 

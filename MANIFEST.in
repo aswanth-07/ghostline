@@ -1,6 +1,6 @@
 # The sdist is the reproducible Ghostline source archive.  Unlike the wheel
 # and player executable, it deliberately carries authored art provenance,
-# project documentation, release automation, web sources, and benchmark
+# project documentation, web sources, and benchmark
 # evidence.  setup.py still copies only manifest-approved runtime assets into
 # the importable wheel.
 include LICENSE
@@ -11,7 +11,6 @@ include CHANGELOG.md
 include requirements.lock
 include vercel.json
 include models/model-card.md
-recursive-include .github/workflows *.yml
 recursive-include assets *
 recursive-include benchmarks *.csv *.json *.md
 recursive-include scripts *.py

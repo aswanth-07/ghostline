@@ -19,8 +19,6 @@ REQUIRED = {
     "requirements.lock",
     "setup.py",
     "vercel.json",
-    ".github/workflows/ci.yml",
-    ".github/workflows/release.yml",
     "assets/licenses.json",
     "assets/screenshots/gameplay-stealth-v3.png",
     "assets/visual/ghostline-environment-atlas-source-v1.png",

@@ -6,9 +6,9 @@ status: active
 
 # Setup and release
 
-Python 3.13 is the locked release baseline. CI also checks the base runtime on
-Python 3.12 and 3.14. Use the repository `.venv` and `requirements.lock` for
-every command. Other local virtual environments are unsupported.
+Python 3.13 is the locked release baseline; the package supports Python 3.12–3.14.
+Use the repository `.venv` and `requirements.lock` for every command. Run
+verification and packaging locally. Hosted CI and automated releases are disabled.
 
 ## Install and play
 
